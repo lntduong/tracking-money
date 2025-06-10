@@ -1,0 +1,156 @@
+// This is your Prisma schema file,
+// learn more about it in the docs: https://pris.ly/d/prisma-schema
+
+generator client {
+    provider = "prisma-client-js"
+}
+
+datasource db {
+    provider = "postgresql"
+    url      = env("DATABASE_URL")
+}
+
+// ================================================
+// USER MANAGEMENT
+// ================================================
+
+model User {
+    id           String    @id @default(uuid()) @db.Uuid
+    email        String    @unique
+    passwordHash String    @map("password_hash")
+    fullName     String    @map("full_name")
+    avatarUrl    String?   @map("avatar_url")
+    isPremium    Boolean   @default(false) @map("is_premium")
+    memberSince  DateTime  @default(now()) @map("member_since")
+    lastLogin    DateTime? @map("last_login")
+    createdAt    DateTime  @default(now()) @map("created_at")
+    updatedAt    DateTime  @updatedAt @map("updated_at")
+
+    // Relations
+    wallets      Wallet[]
+    transactions Transaction[]
+    transfers    Transfer[]
+    categories   Category[]
+    settings     UserSetting?
+
+    @@map("users")
+}
+
+model UserSetting {
+    userId              String   @id @map("user_id") @db.Uuid
+    currency            String   @default("VND")
+    language            String   @default("vi")
+    timezone            String   @default("Asia/Ho_Chi_Minh")
+    notificationEnabled Boolean  @default(true) @map("notification_enabled")
+    emailNotifications  Boolean  @default(true) @map("email_notifications")
+    theme               String   @default("light")
+    createdAt           DateTime @default(now()) @map("created_at")
+    updatedAt           DateTime @updatedAt @map("updated_at")
+
+    // Relations
+    user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+    @@map("user_settings")
+}
+
+// ================================================
+// WALLET SYSTEM
+// ================================================
+
+model WalletType {
+    id          String  @id // cash, bank, credit, savings, ewallet, investment
+    name        String
+    icon        String // emoji icons
+    description String?
+
+    // Relations
+    wallets Wallet[]
+
+    @@map("wallet_types")
+}
+
+model Wallet {
+    id             String   @id @default(uuid()) @db.Uuid
+    userId         String   @map("user_id") @db.Uuid
+    name           String
+    walletType     String   @map("wallet_type")
+    initialBalance Decimal  @default(0) @map("initial_balance") @db.Decimal(15, 2)
+    currentBalance Decimal  @default(0) @map("current_balance") @db.Decimal(15, 2)
+    description    String?
+    isActive       Boolean  @default(true) @map("is_active")
+    createdAt      DateTime @default(now()) @map("created_at")
+    updatedAt      DateTime @updatedAt @map("updated_at")
+
+    // Relations
+    user          User          @relation(fields: [userId], references: [id], onDelete: Cascade)
+    type          WalletType    @relation(fields: [walletType], references: [id])
+    transactions  Transaction[]
+    transfersFrom Transfer[]    @relation("FromWallet")
+    transfersTo   Transfer[]    @relation("ToWallet")
+
+    @@map("wallets")
+}
+
+// ================================================
+// CATEGORY SYSTEM
+// ================================================
+
+model Category {
+    id        String   @id @default(uuid()) @db.Uuid
+    userId    String?  @map("user_id") @db.Uuid // NULL for default categories
+    name      String
+    icon      String // emoji icons like 🍔, 🚗
+    color     String // color themes: orange, blue, purple, etc.
+    isDefault Boolean  @default(false) @map("is_default")
+    createdAt DateTime @default(now()) @map("created_at")
+    updatedAt DateTime @updatedAt @map("updated_at")
+
+    // Relations
+    user         User?         @relation(fields: [userId], references: [id], onDelete: Cascade)
+    transactions Transaction[]
+
+    @@unique([userId, name]) // Prevent duplicate names per user
+    @@map("categories")
+}
+
+// ================================================
+// TRANSACTION SYSTEM
+// ================================================
+
+model Transaction {
+    id              String   @id @default(uuid()) @db.Uuid
+    userId          String   @map("user_id") @db.Uuid
+    walletId        String   @map("wallet_id") @db.Uuid
+    categoryId      String?  @map("category_id") @db.Uuid
+    type            String // 'income' or 'expense'
+    amount          Decimal  @db.Decimal(15, 2)
+    description     String?
+    transactionDate DateTime @default(now()) @map("transaction_date")
+    createdAt       DateTime @default(now()) @map("created_at")
+    updatedAt       DateTime @updatedAt @map("updated_at")
+
+    // Relations
+    user     User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+    wallet   Wallet    @relation(fields: [walletId], references: [id], onDelete: Cascade)
+    category Category? @relation(fields: [categoryId], references: [id], onDelete: SetNull)
+
+    @@map("transactions")
+}
+
+model Transfer {
+    id           String   @id @default(uuid()) @db.Uuid
+    userId       String   @map("user_id") @db.Uuid
+    fromWalletId String   @map("from_wallet_id") @db.Uuid
+    toWalletId   String   @map("to_wallet_id") @db.Uuid
+    amount       Decimal  @db.Decimal(15, 2)
+    note         String?
+    transferDate DateTime @default(now()) @map("transfer_date")
+    createdAt    DateTime @default(now()) @map("created_at")
+
+    // Relations
+    user       User   @relation(fields: [userId], references: [id], onDelete: Cascade)
+    fromWallet Wallet @relation("FromWallet", fields: [fromWalletId], references: [id], onDelete: Cascade)
+    toWallet   Wallet @relation("ToWallet", fields: [toWalletId], references: [id], onDelete: Cascade)
+
+    @@map("transfers")
+}

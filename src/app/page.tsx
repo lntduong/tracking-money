@@ -1,3 +1,5 @@
+'use client';
+
 import {
 	Eye,
 	TrendingUp,
@@ -11,8 +13,60 @@ import { Card, CardContent } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import Link from 'next/link';
+import { useEffect, useState } from 'react';
+
+interface DashboardData {
+	totalBalance: number;
+	wallets: Array<{
+		id: string;
+		name: string;
+		type: string;
+		balance: number;
+		icon: string;
+	}>;
+	recentTransactions: Array<{
+		id: string;
+		type: 'income' | 'expense';
+		amount: number;
+		category: {
+			name: string;
+			icon: string;
+			color: string;
+		};
+		wallet: string;
+		description: string;
+		date: string;
+		time: string;
+	}>;
+	summary: {
+		totalWallets: number;
+		totalTransactions: number;
+	};
+}
 
 export default function HomePage() {
+	const [dashboardData, setDashboardData] = useState<DashboardData | null>(
+		null,
+	);
+	const [loading, setLoading] = useState(true);
+
+	useEffect(() => {
+		async function fetchDashboardData() {
+			try {
+				const response = await fetch('/api/dashboard');
+				const result = await response.json();
+				if (result.success) {
+					setDashboardData(result.data);
+				}
+			} catch (error) {
+				console.error('Failed to fetch dashboard data:', error);
+			} finally {
+				setLoading(false);
+			}
+		}
+
+		fetchDashboardData();
+	}, []);
 	return (
 		<div className='min-h-screen bg-muted/50 safe-area-top'>
 			{/* Header */}
@@ -83,7 +137,13 @@ export default function HomePage() {
 								Số dư khả dụng
 							</p>
 							<p className='text-white text-3xl font-bold mt-1'>
-								6,250,000 VNĐ
+								{loading ? (
+									<span className='animate-pulse'>...</span>
+								) : (
+									`${
+										dashboardData?.totalBalance?.toLocaleString('vi-VN') || '0'
+									} VNĐ`
+								)}
 							</p>
 						</div>
 
@@ -226,59 +286,105 @@ export default function HomePage() {
 
 				<Card>
 					<CardContent className='p-0'>
-						<div className='divide-y divide-border'>
-							<div className='p-4 flex justify-between items-center'>
-								<div className='flex items-center space-x-3'>
-									<div className='w-10 h-10 bg-red-100 rounded-full flex items-center justify-center'>
-										<span className='text-red-600 text-sm'>🍔</span>
-									</div>
-									<div>
-										<p className='font-medium'>Ăn trưa</p>
-										<p className='text-sm text-muted-foreground'>
-											Hôm nay, 12:30
-										</p>
-									</div>
-								</div>
-								<Badge variant='destructive' className='font-semibold'>
-									-85,000 VNĐ
-								</Badge>
+						{loading ? (
+							<div className='p-8 text-center'>
+								<div className='animate-spin w-6 h-6 border-2 border-primary border-t-transparent rounded-full mx-auto'></div>
+								<p className='text-muted-foreground text-sm mt-2'>
+									Đang tải...
+								</p>
 							</div>
-
-							<div className='p-4 flex justify-between items-center'>
-								<div className='flex items-center space-x-3'>
-									<div className='w-10 h-10 bg-blue-100 rounded-full flex items-center justify-center'>
-										<span className='text-blue-600 text-sm'>⛽</span>
+						) : dashboardData?.recentTransactions?.length ? (
+							<div className='divide-y divide-border'>
+								{dashboardData.recentTransactions.map((transaction) => (
+									<div
+										key={transaction.id}
+										className='p-4 flex justify-between items-center'
+									>
+										<div className='flex items-center space-x-3'>
+											<div
+												className={`w-10 h-10 rounded-full flex items-center justify-center ${
+													transaction.category.color === 'orange'
+														? 'bg-orange-100'
+														: transaction.category.color === 'blue'
+														? 'bg-blue-100'
+														: transaction.category.color === 'green'
+														? 'bg-green-100'
+														: transaction.category.color === 'red'
+														? 'bg-red-100'
+														: transaction.category.color === 'purple'
+														? 'bg-purple-100'
+														: transaction.category.color === 'yellow'
+														? 'bg-yellow-100'
+														: transaction.category.color === 'indigo'
+														? 'bg-indigo-100'
+														: transaction.category.color === 'teal'
+														? 'bg-teal-100'
+														: transaction.category.color === 'emerald'
+														? 'bg-emerald-100'
+														: 'bg-gray-100'
+												}`}
+											>
+												<span
+													className={`text-sm ${
+														transaction.category.color === 'orange'
+															? 'text-orange-600'
+															: transaction.category.color === 'blue'
+															? 'text-blue-600'
+															: transaction.category.color === 'green'
+															? 'text-green-600'
+															: transaction.category.color === 'red'
+															? 'text-red-600'
+															: transaction.category.color === 'purple'
+															? 'text-purple-600'
+															: transaction.category.color === 'yellow'
+															? 'text-yellow-600'
+															: transaction.category.color === 'indigo'
+															? 'text-indigo-600'
+															: transaction.category.color === 'teal'
+															? 'text-teal-600'
+															: transaction.category.color === 'emerald'
+															? 'text-emerald-600'
+															: 'text-gray-600'
+													}`}
+												>
+													{transaction.category.icon}
+												</span>
+											</div>
+											<div>
+												<p className='font-medium'>
+													{transaction.description || transaction.category.name}
+												</p>
+												<p className='text-sm text-muted-foreground'>
+													{new Date(transaction.date).toLocaleDateString(
+														'vi-VN',
+													)}
+													, {transaction.time}
+												</p>
+											</div>
+										</div>
+										<Badge
+											variant={
+												transaction.type === 'income'
+													? 'default'
+													: 'destructive'
+											}
+											className={`font-semibold ${
+												transaction.type === 'income'
+													? 'bg-green-600 hover:bg-green-700'
+													: ''
+											}`}
+										>
+											{transaction.type === 'income' ? '+' : '-'}
+											{transaction.amount.toLocaleString('vi-VN')} VNĐ
+										</Badge>
 									</div>
-									<div>
-										<p className='font-medium'>Xăng xe</p>
-										<p className='text-sm text-muted-foreground'>
-											Hôm qua, 8:00
-										</p>
-									</div>
-								</div>
-								<Badge variant='destructive' className='font-semibold'>
-									-200,000 VNĐ
-								</Badge>
+								))}
 							</div>
-
-							<div className='p-4 flex justify-between items-center'>
-								<div className='flex items-center space-x-3'>
-									<div className='w-10 h-10 bg-green-100 rounded-full flex items-center justify-center'>
-										<span className='text-green-600 text-sm'>💰</span>
-									</div>
-									<div>
-										<p className='font-medium'>Lương tháng 12</p>
-										<p className='text-sm text-muted-foreground'>1/12/2024</p>
-									</div>
-								</div>
-								<Badge
-									variant='default'
-									className='font-semibold bg-green-600 hover:bg-green-700'
-								>
-									+15,000,000 VNĐ
-								</Badge>
+						) : (
+							<div className='p-8 text-center'>
+								<p className='text-muted-foreground'>Chưa có giao dịch nào</p>
 							</div>
-						</div>
+						)}
 					</CardContent>
 				</Card>
 			</div>

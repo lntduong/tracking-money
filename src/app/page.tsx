@@ -186,7 +186,7 @@ export default function HomePage() {
 								variant='ghost'
 								className='flex flex-col items-center p-2 h-auto hover:bg-accent transition-all duration-200 hover:scale-105'
 							>
-								<Link href='/add'>
+								<Link href='/categories'>
 									<div className='w-10 h-10 bg-gradient-to-br from-cyan-400 to-cyan-600 rounded-full flex items-center justify-center mb-1 shadow-lg'>
 										<Tag className='w-5 h-5 text-white' />
 									</div>

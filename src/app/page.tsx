@@ -10,6 +10,7 @@ import {
 import { Card, CardContent } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
+import Link from 'next/link';
 
 export default function HomePage() {
 	return (
@@ -122,74 +123,92 @@ export default function HomePage() {
 						<div className='grid grid-cols-3 gap-3'>
 							{/* Row 1 */}
 							<Button
+								asChild
 								variant='ghost'
 								className='flex flex-col items-center p-2 h-auto hover:bg-accent transition-all duration-200 hover:scale-105'
 							>
-								<div className='w-10 h-10 bg-gradient-to-br from-emerald-400 to-emerald-600 rounded-full flex items-center justify-center mb-1 shadow-lg'>
-									<TrendingUp className='w-5 h-5 text-white' />
-								</div>
-								<span className='text-xs font-medium text-emerald-700'>
-									Thu nhập
-								</span>
+								<Link href='/add'>
+									<div className='w-10 h-10 bg-gradient-to-br from-emerald-400 to-emerald-600 rounded-full flex items-center justify-center mb-1 shadow-lg'>
+										<TrendingUp className='w-5 h-5 text-white' />
+									</div>
+									<span className='text-xs font-medium text-emerald-700'>
+										Thu nhập
+									</span>
+								</Link>
 							</Button>
 
 							<Button
+								asChild
 								variant='ghost'
 								className='flex flex-col items-center p-2 h-auto hover:bg-accent transition-all duration-200 hover:scale-105'
 							>
-								<div className='w-10 h-10 bg-gradient-to-br from-rose-400 to-rose-600 rounded-full flex items-center justify-center mb-1 shadow-lg'>
-									<TrendingDown className='w-5 h-5 text-white' />
-								</div>
-								<span className='text-xs font-medium text-rose-700'>
-									Chi tiêu
-								</span>
+								<Link href='/add'>
+									<div className='w-10 h-10 bg-gradient-to-br from-rose-400 to-rose-600 rounded-full flex items-center justify-center mb-1 shadow-lg'>
+										<TrendingDown className='w-5 h-5 text-white' />
+									</div>
+									<span className='text-xs font-medium text-rose-700'>
+										Chi tiêu
+									</span>
+								</Link>
 							</Button>
 
 							<Button
+								asChild
 								variant='ghost'
 								className='flex flex-col items-center p-2 h-auto hover:bg-accent transition-all duration-200 hover:scale-105'
 							>
-								<div className='w-10 h-10 bg-gradient-to-br from-violet-400 to-violet-600 rounded-full flex items-center justify-center mb-1 shadow-lg'>
-									<ArrowLeftRight className='w-5 h-5 text-white' />
-								</div>
-								<span className='text-xs font-medium text-violet-700'>
-									Chuyển khoản
-								</span>
+								<Link href='/transfer'>
+									<div className='w-10 h-10 bg-gradient-to-br from-violet-400 to-violet-600 rounded-full flex items-center justify-center mb-1 shadow-lg'>
+										<ArrowLeftRight className='w-5 h-5 text-white' />
+									</div>
+									<span className='text-xs font-medium text-violet-700'>
+										Chuyển khoản
+									</span>
+								</Link>
 							</Button>
 
 							{/* Row 2 */}
 							<Button
+								asChild
 								variant='ghost'
 								className='flex flex-col items-center p-2 h-auto hover:bg-accent transition-all duration-200 hover:scale-105'
 							>
-								<div className='w-10 h-10 bg-gradient-to-br from-blue-400 to-blue-600 rounded-full flex items-center justify-center mb-1 shadow-lg'>
-									<Wallet className='w-5 h-5 text-white' />
-								</div>
-								<span className='text-xs font-medium text-blue-700'>Ví</span>
+								<Link href='/wallet'>
+									<div className='w-10 h-10 bg-gradient-to-br from-blue-400 to-blue-600 rounded-full flex items-center justify-center mb-1 shadow-lg'>
+										<Wallet className='w-5 h-5 text-white' />
+									</div>
+									<span className='text-xs font-medium text-blue-700'>Ví</span>
+								</Link>
 							</Button>
 
 							<Button
+								asChild
 								variant='ghost'
 								className='flex flex-col items-center p-2 h-auto hover:bg-accent transition-all duration-200 hover:scale-105'
 							>
-								<div className='w-10 h-10 bg-gradient-to-br from-cyan-400 to-cyan-600 rounded-full flex items-center justify-center mb-1 shadow-lg'>
-									<Tag className='w-5 h-5 text-white' />
-								</div>
-								<span className='text-xs font-medium text-cyan-700'>
-									Danh mục
-								</span>
+								<Link href='/add'>
+									<div className='w-10 h-10 bg-gradient-to-br from-cyan-400 to-cyan-600 rounded-full flex items-center justify-center mb-1 shadow-lg'>
+										<Tag className='w-5 h-5 text-white' />
+									</div>
+									<span className='text-xs font-medium text-cyan-700'>
+										Danh mục
+									</span>
+								</Link>
 							</Button>
 
 							<Button
+								asChild
 								variant='ghost'
 								className='flex flex-col items-center p-2 h-auto hover:bg-accent transition-all duration-200 hover:scale-105'
 							>
-								<div className='w-10 h-10 bg-gradient-to-br from-orange-400 to-orange-600 rounded-full flex items-center justify-center mb-1 shadow-lg'>
-									<BarChart3 className='w-5 h-5 text-white' />
-								</div>
-								<span className='text-xs font-medium text-orange-700'>
-									Báo cáo
-								</span>
+								<Link href='/reports'>
+									<div className='w-10 h-10 bg-gradient-to-br from-orange-400 to-orange-600 rounded-full flex items-center justify-center mb-1 shadow-lg'>
+										<BarChart3 className='w-5 h-5 text-white' />
+									</div>
+									<span className='text-xs font-medium text-orange-700'>
+										Báo cáo
+									</span>
+								</Link>
 							</Button>
 						</div>
 					</CardContent>

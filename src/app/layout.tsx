@@ -1,6 +1,7 @@
 import type { Metadata, Viewport } from 'next';
 import { Be_Vietnam_Pro } from 'next/font/google';
 import './globals.css';
+import { BottomNav } from '@/components/BottomNav';
 
 const beVietnamPro = Be_Vietnam_Pro({
 	variable: '--font-be-vietnam-pro',
@@ -46,7 +47,8 @@ export default function RootLayout({
 	return (
 		<html lang='vi'>
 			<body className={`${beVietnamPro.variable} font-sans antialiased`}>
-				{children}
+				<main className='pb-20'>{children}</main>
+				<BottomNav />
 			</body>
 		</html>
 	);

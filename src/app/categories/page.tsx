@@ -18,6 +18,8 @@ import {
 import { useState, useEffect } from 'react';
 import { useSession } from 'next-auth/react';
 import { useRouter } from 'next/navigation';
+import Picker from '@emoji-mart/react';
+import data from '@emoji-mart/data';
 
 interface Category {
 	id: string;
@@ -43,6 +45,8 @@ export default function CategoriesPage() {
 	const [editName, setEditName] = useState('');
 	const [editIcon, setEditIcon] = useState('');
 	const [editLoading, setEditLoading] = useState(false);
+	const [showNewIconPicker, setShowNewIconPicker] = useState(false);
+	const [showEditIconPicker, setShowEditIconPicker] = useState(false);
 
 	useEffect(() => {
 		if (status === 'unauthenticated') {
@@ -284,17 +288,33 @@ export default function CategoriesPage() {
 									disabled={loading}
 								/>
 							</div>
-							<div className='space-y-2'>
+							<div className='space-y-2 relative'>
 								<Label htmlFor='categoryIcon'>Icon</Label>
 								<Input
 									id='categoryIcon'
 									value={newCategoryIcon}
-									onChange={(e) => setNewCategoryIcon(e.target.value)}
-									placeholder='🏷️'
-									className='border-2 focus:border-cyan-500 text-center text-lg'
+									onFocus={() => setShowNewIconPicker(true)}
+									onBlur={() =>
+										setTimeout(() => setShowNewIconPicker(false), 200)
+									}
+									readOnly
+									className='border-2 focus:border-cyan-500 text-center text-lg cursor-pointer bg-white'
 									maxLength={2}
 									disabled={loading}
+									style={{ caretColor: 'transparent' }}
 								/>
+								{showNewIconPicker && (
+									<div className='absolute z-50 top-12 right-0 min-w-[320px] max-w-xs shadow-lg rounded-xl border bg-white'>
+										<Picker
+											data={data}
+											onEmojiSelect={(emoji: any) => {
+												setNewCategoryIcon(emoji.native);
+												setShowNewIconPicker(false);
+											}}
+											theme='light'
+										/>
+									</div>
+								)}
 							</div>
 						</div>
 						<Button
@@ -380,14 +400,38 @@ export default function CategoriesPage() {
 															disabled={editLoading}
 															style={{ minWidth: 0 }}
 														/>
-														<Input
-															value={editIcon}
-															onChange={(e) => setEditIcon(e.target.value)}
-															className='w-10 h-8 text-lg text-center px-1'
-															maxLength={2}
-															disabled={editLoading}
-															style={{ minWidth: 0 }}
-														/>
+														<div className='relative'>
+															<Input
+																value={editIcon}
+																onFocus={() => setShowEditIconPicker(true)}
+																onBlur={() =>
+																	setTimeout(
+																		() => setShowEditIconPicker(false),
+																		200,
+																	)
+																}
+																readOnly
+																className='w-10 h-8 text-lg text-center px-1 cursor-pointer bg-white'
+																maxLength={2}
+																disabled={editLoading}
+																style={{
+																	minWidth: 0,
+																	caretColor: 'transparent',
+																}}
+															/>
+															{showEditIconPicker && (
+																<div className='absolute z-50 bottom-12 left-0 min-w-[320px] max-w-xs shadow-lg rounded-xl border bg-white'>
+																	<Picker
+																		data={data}
+																		onEmojiSelect={(emoji: any) => {
+																			setEditIcon(emoji.native);
+																			setShowEditIconPicker(false);
+																		}}
+																		theme='light'
+																	/>
+																</div>
+															)}
+														</div>
 														<Button
 															onClick={() => saveEditCategory(category)}
 															disabled={editLoading || !editName.trim()}

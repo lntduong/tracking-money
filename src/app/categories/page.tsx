@@ -5,92 +5,178 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Badge } from '@/components/ui/badge';
-import { Tag, Plus, Trash2, Edit, Eye, Search, Filter } from 'lucide-react';
-import { useState } from 'react';
+import {
+	Tag,
+	Plus,
+	Trash2,
+	Edit,
+	Eye,
+	Search,
+	Filter,
+	Loader2,
+} from 'lucide-react';
+import { useState, useEffect } from 'react';
+import { useSession } from 'next-auth/react';
+import { useRouter } from 'next/navigation';
 
 interface Category {
 	id: string;
 	name: string;
 	icon: string;
 	color: string;
-	transactionCount: number;
+	isDefault: boolean;
+	transactionCount?: number;
 }
 
 export default function CategoriesPage() {
-	const [categories, setCategories] = useState<Category[]>([
-		{
-			id: '1',
-			name: 'Ăn uống',
-			icon: '🍔',
-			color: 'orange',
-			transactionCount: 45,
-		},
-		{
-			id: '2',
-			name: 'Đi lại',
-			icon: '🚗',
-			color: 'blue',
-			transactionCount: 32,
-		},
-		{
-			id: '3',
-			name: 'Mua sắm',
-			icon: '🛍️',
-			color: 'purple',
-			transactionCount: 28,
-		},
-		{
-			id: '4',
-			name: 'Giải trí',
-			icon: '🎮',
-			color: 'green',
-			transactionCount: 15,
-		},
-		{ id: '5', name: 'Y tế', icon: '🏥', color: 'red', transactionCount: 8 },
-		{
-			id: '6',
-			name: 'Tiện ích',
-			icon: '⚡',
-			color: 'yellow',
-			transactionCount: 12,
-		},
-		{
-			id: '7',
-			name: 'Giáo dục',
-			icon: '📚',
-			color: 'indigo',
-			transactionCount: 6,
-		},
-		{
-			id: '8',
-			name: 'Du lịch',
-			icon: '✈️',
-			color: 'teal',
-			transactionCount: 3,
-		},
-	]);
-
+	const router = useRouter();
+	const { status } = useSession();
+	const [categories, setCategories] = useState<Category[]>([]);
+	const [loading, setLoading] = useState(true);
+	const [error, setError] = useState<string | null>(null);
 	const [newCategoryName, setNewCategoryName] = useState('');
 	const [newCategoryIcon, setNewCategoryIcon] = useState('🏷️');
 	const [searchTerm, setSearchTerm] = useState('');
+	const [editingCategoryId, setEditingCategoryId] = useState<string | null>(
+		null,
+	);
+	const [editName, setEditName] = useState('');
+	const [editIcon, setEditIcon] = useState('');
+	const [editLoading, setEditLoading] = useState(false);
 
-	const addCategory = () => {
-		if (newCategoryName.trim()) {
-			const newCategory: Category = {
-				id: Date.now().toString(),
-				name: newCategoryName.trim(),
-				icon: newCategoryIcon,
-				color: 'cyan',
-				transactionCount: 0,
-			};
-			setCategories([...categories, newCategory]);
-			setNewCategoryName('');
-			setNewCategoryIcon('🏷️');
+	useEffect(() => {
+		if (status === 'unauthenticated') {
+			router.push('/auth/signin');
+			return;
+		}
+
+		if (status === 'authenticated') {
+			fetchCategories();
+		}
+	}, [status]);
+
+	const fetchCategories = async () => {
+		try {
+			setLoading(true);
+			setError(null);
+
+			const response = await fetch('/api/categories');
+			const result = await response.json();
+
+			if (result.success) {
+				setCategories(result.data);
+			} else {
+				setError(result.error || 'Failed to fetch categories');
+			}
+		} catch (err) {
+			console.error('Error fetching categories:', err);
+			setError('Failed to fetch categories');
+		} finally {
+			setLoading(false);
 		}
 	};
 
-	const deleteCategory = (id: string) => {
-		setCategories(categories.filter((cat) => cat.id !== id));
+	const addCategory = async () => {
+		if (!newCategoryName.trim()) return;
+
+		try {
+			setLoading(true);
+			setError(null);
+
+			const response = await fetch('/api/categories', {
+				method: 'POST',
+				headers: {
+					'Content-Type': 'application/json',
+				},
+				body: JSON.stringify({
+					name: newCategoryName.trim(),
+					icon: newCategoryIcon,
+					color: 'cyan',
+				}),
+			});
+
+			const result = await response.json();
+
+			if (result.success) {
+				setCategories([...categories, result.data]);
+				setNewCategoryName('');
+				setNewCategoryIcon('🏷️');
+			} else {
+				setError(result.error || 'Failed to create category');
+			}
+		} catch (err) {
+			console.error('Error creating category:', err);
+			setError('Failed to create category');
+		} finally {
+			setLoading(false);
+		}
+	};
+
+	const deleteCategory = async (id: string) => {
+		try {
+			setLoading(true);
+			setError(null);
+
+			const response = await fetch(`/api/categories/${id}`, {
+				method: 'DELETE',
+			});
+
+			const result = await response.json();
+
+			if (result.success) {
+				setCategories(categories.filter((cat) => cat.id !== id));
+			} else {
+				setError(result.error || 'Failed to delete category');
+			}
+		} catch (err) {
+			console.error('Error deleting category:', err);
+			setError('Failed to delete category');
+		} finally {
+			setLoading(false);
+		}
+	};
+
+	const startEditCategory = (cat: Category) => {
+		setEditingCategoryId(cat.id);
+		setEditName(cat.name);
+		setEditIcon(cat.icon);
+	};
+
+	const cancelEditCategory = () => {
+		setEditingCategoryId(null);
+		setEditName('');
+		setEditIcon('');
+	};
+
+	const saveEditCategory = async (cat: Category) => {
+		if (!editName.trim()) return;
+		try {
+			setEditLoading(true);
+			setError(null);
+			const response = await fetch(`/api/categories/${cat.id}`, {
+				method: 'PATCH',
+				headers: { 'Content-Type': 'application/json' },
+				body: JSON.stringify({
+					name: editName.trim(),
+					icon: editIcon,
+					color: cat.color,
+				}),
+			});
+			const result = await response.json();
+			if (result.success) {
+				setCategories(
+					categories.map((c) => (c.id === cat.id ? result.data : c)),
+				);
+				cancelEditCategory();
+			} else {
+				setError(result.error || 'Failed to update category');
+			}
+		} catch (err) {
+			console.error('Error updating category:', err);
+			setError('Failed to update category');
+		} finally {
+			setEditLoading(false);
+		}
 	};
 
 	const filteredCategories = categories.filter((category) =>
@@ -111,6 +197,37 @@ export default function CategoriesPage() {
 		};
 		return colorMap[color as keyof typeof colorMap] || colorMap.cyan;
 	};
+
+	if (status === 'loading' || loading) {
+		return (
+			<div className='min-h-screen bg-muted/50 safe-area-top flex items-center justify-center'>
+				<div className='text-center'>
+					<div className='w-16 h-16 border-4 border-cyan-600 border-t-transparent rounded-full animate-spin mx-auto mb-4'></div>
+					<p className='text-gray-600'>Đang tải danh mục...</p>
+				</div>
+			</div>
+		);
+	}
+
+	if (error) {
+		return (
+			<div className='min-h-screen bg-muted/50 safe-area-top flex items-center justify-center'>
+				<div className='text-center'>
+					<div className='w-16 h-16 bg-red-100 rounded-full flex items-center justify-center mx-auto mb-4'>
+						<Loader2 className='w-8 h-8 text-red-600' />
+					</div>
+					<p className='text-gray-900 font-medium mb-2'>Có lỗi xảy ra</p>
+					<p className='text-gray-600 mb-4'>{error}</p>
+					<Button
+						onClick={fetchCategories}
+						className='bg-cyan-600 hover:bg-cyan-700'
+					>
+						Thử lại
+					</Button>
+				</div>
+			</div>
+		);
+	}
 
 	return (
 		<div className='min-h-screen bg-muted/50 safe-area-top'>
@@ -164,6 +281,7 @@ export default function CategoriesPage() {
 									onChange={(e) => setNewCategoryName(e.target.value)}
 									placeholder='Nhập tên danh mục'
 									className='border-2 focus:border-cyan-500'
+									disabled={loading}
 								/>
 							</div>
 							<div className='space-y-2'>
@@ -175,15 +293,20 @@ export default function CategoriesPage() {
 									placeholder='🏷️'
 									className='border-2 focus:border-cyan-500 text-center text-lg'
 									maxLength={2}
+									disabled={loading}
 								/>
 							</div>
 						</div>
 						<Button
 							onClick={addCategory}
 							className='w-full bg-gradient-to-r from-cyan-600 to-teal-600 hover:from-cyan-700 hover:to-teal-700'
-							disabled={!newCategoryName.trim()}
+							disabled={!newCategoryName.trim() || loading}
 						>
-							<Plus className='w-4 h-4 mr-2' />
+							{loading ? (
+								<Loader2 className='w-4 h-4 mr-2 animate-spin' />
+							) : (
+								<Plus className='w-4 h-4 mr-2' />
+							)}
 							Thêm danh mục
 						</Button>
 					</CardContent>
@@ -200,12 +323,14 @@ export default function CategoriesPage() {
 									onChange={(e) => setSearchTerm(e.target.value)}
 									placeholder='Tìm kiếm danh mục...'
 									className='pl-10 border-2 focus:border-cyan-500'
+									disabled={loading}
 								/>
 							</div>
 							<Button
 								variant='outline'
 								size='icon'
 								className='border-2 hover:bg-cyan-50'
+								disabled={loading}
 							>
 								<Filter className='w-4 h-4' />
 							</Button>
@@ -246,30 +371,81 @@ export default function CategoriesPage() {
 												<span className='text-xl'>{category.icon}</span>
 											</div>
 											<div>
-												<h3 className='font-semibold text-lg'>
-													{category.name}
-												</h3>
-												<p className='text-sm opacity-75'>
-													{category.transactionCount} giao dịch
-												</p>
+												{editingCategoryId === category.id ? (
+													<div className='flex flex-row items-center gap-1'>
+														<Input
+															value={editName}
+															onChange={(e) => setEditName(e.target.value)}
+															className='w-24 h-8 text-base px-2'
+															disabled={editLoading}
+															style={{ minWidth: 0 }}
+														/>
+														<Input
+															value={editIcon}
+															onChange={(e) => setEditIcon(e.target.value)}
+															className='w-10 h-8 text-lg text-center px-1'
+															maxLength={2}
+															disabled={editLoading}
+															style={{ minWidth: 0 }}
+														/>
+														<Button
+															onClick={() => saveEditCategory(category)}
+															disabled={editLoading || !editName.trim()}
+															className='px-2 h-8 bg-cyan-600 hover:bg-cyan-700 text-white text-sm min-w-0'
+															style={{ minWidth: 0 }}
+														>
+															{editLoading ? (
+																<Loader2 className='w-4 h-4 animate-spin' />
+															) : (
+																'Lưu'
+															)}
+														</Button>
+														<Button
+															variant='outline'
+															onClick={cancelEditCategory}
+															disabled={editLoading}
+															className='px-2 h-8 text-sm min-w-0'
+															style={{ minWidth: 0 }}
+														>
+															Huỷ
+														</Button>
+													</div>
+												) : (
+													<>
+														<h3 className='font-semibold text-lg'>
+															{category.name}
+														</h3>
+														<p className='text-sm opacity-75'>
+															{category.transactionCount || 0} giao dịch
+														</p>
+													</>
+												)}
 											</div>
 										</div>
-										<div className='flex items-center gap-2'>
-											<Button
-												variant='ghost'
-												size='icon'
-												className='h-8 w-8 hover:bg-white/30'
-											>
-												<Edit className='w-4 h-4' />
-											</Button>
-											<Button
-												variant='ghost'
-												size='icon'
-												className='h-8 w-8 hover:bg-white/30 text-red-600'
-												onClick={() => deleteCategory(category.id)}
-											>
-												<Trash2 className='w-4 h-4' />
-											</Button>
+										<div className='flex items-center space-x-2'>
+											{!category.isDefault &&
+												editingCategoryId !== category.id && (
+													<>
+														<Button
+															variant='ghost'
+															size='icon'
+															className='hover:bg-white/50'
+															onClick={() => startEditCategory(category)}
+															disabled={loading || editLoading}
+														>
+															<Edit className='w-4 h-4' />
+														</Button>
+														<Button
+															variant='ghost'
+															size='icon'
+															className='hover:bg-white/50 text-red-600'
+															onClick={() => deleteCategory(category.id)}
+															disabled={loading || editLoading}
+														>
+															<Trash2 className='w-4 h-4' />
+														</Button>
+													</>
+												)}
 										</div>
 									</div>
 								</div>

@@ -1,11 +1,22 @@
 import { NextResponse } from 'next/server';
 import { prisma } from '@/lib/prisma';
+import { getServerSession } from 'next-auth';
+import { authOptions } from '@/lib/auth';
 
 export async function GET() {
 	try {
-		// For demo purposes, using the demo user
-		// In real app, get userId from session/auth
-		const userId = '14af0328-525a-4346-aa63-579daee01fab'; // Demo user ID
+		const session = await getServerSession(authOptions);
+		if (!session?.user?.id) {
+			return NextResponse.json(
+				{
+					success: false,
+					error: 'Unauthorized',
+				},
+				{ status: 401 },
+			);
+		}
+
+		const userId = session.user.id;
 
 		// Get user's wallets with transaction counts
 		const wallets = await prisma.wallet.findMany({
@@ -69,9 +80,20 @@ export async function GET() {
 
 export async function POST(request: Request) {
 	try {
+		const session = await getServerSession(authOptions);
+		if (!session?.user?.id) {
+			return NextResponse.json(
+				{
+					success: false,
+					error: 'Unauthorized',
+				},
+				{ status: 401 },
+			);
+		}
+
+		const userId = session.user.id;
 		const { name, walletType, initialBalance, description } =
 			await request.json();
-		const userId = '14af0328-525a-4346-aa63-579daee01fab'; // Demo user ID
 
 		// Validate wallet type exists
 		const typeExists = await prisma.walletType.findUnique({

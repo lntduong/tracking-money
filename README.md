@@ -66,8 +66,4 @@ Check out our [Next.js deployment documentation](https://nextjs.org/docs/app/bui
 ✅ Hoàn toàn Tiếng Việt: Tất cả text và labels
 ✅ VNĐ Currency: Format tiền tệ Việt Nam
 ✅ Cultural Context: Phù hợp với người dùng Việt
-WalletPage integration - Update wallet page to use /api/wallets
-AddWalletForm - Connect to /api/wallet-types và /api/wallets
-Categories API - For CategoriesPage integration
-Reports API - For ReportsPage analytics
-Authentication - Add NextAuth.js cho real user management
+

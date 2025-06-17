@@ -1,3 +1,6 @@
+'use client';
+
+import { useEffect, useState } from 'react';
 import {
 	Settings,
 	Bell,
@@ -10,8 +13,148 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Avatar, AvatarFallback } from '@/components/ui/avatar';
 import { Badge } from '@/components/ui/badge';
+import { signOut, useSession } from 'next-auth/react';
+import { useRouter } from 'next/navigation';
+import { format } from 'date-fns';
+import { vi } from 'date-fns/locale';
+
+interface AccountData {
+	id: string;
+	email: string;
+	fullName: string;
+	avatarUrl: string | null;
+	isPremium: boolean;
+	memberSince: string;
+	lastLogin: string | null;
+	stats: {
+		transactionCount: number;
+		walletCount: number;
+		daysSinceMember: number;
+	};
+}
 
 export default function AccountPage() {
+	const router = useRouter();
+	const { data: session, status } = useSession();
+	const [accountData, setAccountData] = useState<AccountData | null>(null);
+	const [loading, setLoading] = useState(true);
+	const [error, setError] = useState<string | null>(null);
+	const [retryCount, setRetryCount] = useState(0);
+
+	useEffect(() => {
+		if (status === 'unauthenticated') {
+			router.push('/auth/signin');
+			return;
+		}
+
+		if (status === 'authenticated') {
+			fetchAccountData();
+		}
+	}, [status, retryCount]);
+
+	const fetchAccountData = async () => {
+		try {
+			setLoading(true);
+			setError(null);
+
+			const response = await fetch('/api/account');
+			const result = await response.json();
+
+			if (result.success) {
+				setAccountData(result.data);
+			} else {
+				setError(result.error || 'Failed to fetch account data');
+			}
+		} catch (err) {
+			console.error('Error fetching account data:', err);
+			setError('Failed to fetch account data');
+		} finally {
+			setLoading(false);
+		}
+	};
+
+	const handleRetry = () => {
+		setRetryCount((prev) => prev + 1);
+	};
+
+	const handleLogout = async () => {
+		try {
+			// Call logout API
+			const response = await fetch('/api/auth/logout', {
+				method: 'POST',
+				headers: {
+					'Content-Type': 'application/json',
+				},
+			});
+
+			if (!response.ok) {
+				throw new Error('Failed to logout');
+			}
+
+			// Sign out from NextAuth
+			await signOut({ redirect: false });
+
+			// Clear any local storage or state
+			localStorage.clear();
+			sessionStorage.clear();
+
+			// Redirect to login page
+			router.push('/auth/signin');
+		} catch (error) {
+			console.error('Logout error:', error);
+			// Still try to redirect to login page even if there's an error
+			router.push('/auth/signin');
+		}
+	};
+
+	if (status === 'loading' || loading) {
+		return (
+			<div className='min-h-screen bg-muted/50 safe-area-top flex items-center justify-center'>
+				<div className='text-center'>
+					<div className='w-16 h-16 border-4 border-purple-600 border-t-transparent rounded-full animate-spin mx-auto mb-4'></div>
+					<p className='text-gray-600'>Đang tải thông tin...</p>
+				</div>
+			</div>
+		);
+	}
+
+	if (error) {
+		return (
+			<div className='min-h-screen bg-muted/50 safe-area-top flex items-center justify-center'>
+				<div className='text-center'>
+					<div className='w-16 h-16 bg-red-100 rounded-full flex items-center justify-center mx-auto mb-4'>
+						<HelpCircle className='w-8 h-8 text-red-600' />
+					</div>
+					<p className='text-gray-900 font-medium mb-2'>Có lỗi xảy ra</p>
+					<p className='text-gray-600 mb-4'>{error}</p>
+					<Button
+						onClick={handleRetry}
+						className='bg-purple-600 hover:bg-purple-700'
+					>
+						Thử lại
+					</Button>
+				</div>
+			</div>
+		);
+	}
+
+	if (!accountData) {
+		return null;
+	}
+
+	// Get initials from full name
+	const initials = accountData.fullName
+		.split(' ')
+		.map((n) => n[0])
+		.join('')
+		.toUpperCase();
+
+	// Format member since date
+	const memberSinceDate = new Date(accountData.memberSince);
+	const formattedMemberSince = format(memberSinceDate, 'MMMM yyyy', {
+		locale: vi,
+	});
+
 	return (
 		<div className='min-h-screen bg-muted/50 safe-area-top'>
 			{/* Header */}
@@ -52,9 +195,17 @@ export default function AccountPage() {
 						<div className='flex items-center space-x-4'>
 							<div className='relative'>
 								<Avatar className='w-20 h-20 border-4 border-purple-200'>
-									<AvatarFallback className='bg-gradient-to-br from-purple-500 to-indigo-600 text-white text-2xl font-bold'>
-										NV
-									</AvatarFallback>
+									{accountData.avatarUrl ? (
+										<img
+											src={accountData.avatarUrl}
+											alt={accountData.fullName}
+											className='w-full h-full object-cover'
+										/>
+									) : (
+										<AvatarFallback className='bg-gradient-to-br from-purple-500 to-indigo-600 text-white text-2xl font-bold'>
+											{initials}
+										</AvatarFallback>
+									)}
 								</Avatar>
 								<div className='absolute -bottom-1 -right-1 w-6 h-6 bg-green-500 rounded-full border-2 border-white flex items-center justify-center'>
 									<div className='w-2 h-2 bg-white rounded-full'></div>
@@ -63,15 +214,17 @@ export default function AccountPage() {
 							<div className='flex-1'>
 								<div className='flex items-center gap-2 mb-1'>
 									<h2 className='text-xl font-bold text-gray-900'>
-										Nguyễn Văn A
+										{accountData.fullName}
 									</h2>
-									<Badge className='bg-purple-100 text-purple-700 hover:bg-purple-200'>
-										Premium
-									</Badge>
+									{accountData.isPremium && (
+										<Badge className='bg-purple-100 text-purple-700 hover:bg-purple-200'>
+											Premium
+										</Badge>
+									)}
 								</div>
-								<p className='text-gray-600 mb-2'>nguyenvana@example.com</p>
+								<p className='text-gray-600 mb-2'>{accountData.email}</p>
 								<p className='text-sm text-gray-500'>
-									Thành viên từ: Tháng 1, 2024
+									Thành viên từ: {formattedMemberSince}
 								</p>
 							</div>
 						</div>
@@ -82,19 +235,25 @@ export default function AccountPage() {
 				<div className='grid grid-cols-3 gap-3'>
 					<Card className='bg-gradient-to-br from-emerald-50 to-green-50 border-emerald-200'>
 						<CardContent className='p-4 text-center'>
-							<div className='text-2xl font-bold text-emerald-700'>152</div>
+							<div className='text-2xl font-bold text-emerald-700'>
+								{accountData.stats.transactionCount}
+							</div>
 							<p className='text-xs text-emerald-600'>Giao dịch</p>
 						</CardContent>
 					</Card>
 					<Card className='bg-gradient-to-br from-blue-50 to-indigo-50 border-blue-200'>
 						<CardContent className='p-4 text-center'>
-							<div className='text-2xl font-bold text-blue-700'>3</div>
+							<div className='text-2xl font-bold text-blue-700'>
+								{accountData.stats.walletCount}
+							</div>
 							<p className='text-xs text-blue-600'>Ví</p>
 						</CardContent>
 					</Card>
 					<Card className='bg-gradient-to-br from-amber-50 to-orange-50 border-amber-200'>
 						<CardContent className='p-4 text-center'>
-							<div className='text-2xl font-bold text-amber-700'>68</div>
+							<div className='text-2xl font-bold text-amber-700'>
+								{accountData.stats.daysSinceMember}
+							</div>
 							<p className='text-xs text-amber-600'>Ngày sử dụng</p>
 						</CardContent>
 					</Card>
@@ -172,6 +331,7 @@ export default function AccountPage() {
 					<CardContent className='p-0'>
 						<Button
 							variant='ghost'
+							onClick={handleLogout}
 							className='w-full justify-start h-auto p-4 text-rose-700 hover:bg-rose-100 hover:text-rose-800 group transition-all duration-200'
 						>
 							<div className='flex items-center space-x-3'>

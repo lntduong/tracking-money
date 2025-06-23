@@ -1,11 +1,18 @@
 import { NextResponse } from 'next/server';
 import { prisma } from '@/lib/prisma';
+import { getServerSession } from 'next-auth';
+import { authOptions } from '@/lib/auth';
 
 export async function GET() {
 	try {
-		// For demo purposes, using the demo user
-		// In real app, get userId from session/auth
-		const userId = '14af0328-525a-4346-aa63-579daee01fab'; // Demo user ID
+		const session = await getServerSession(authOptions);
+		if (!session?.user?.id) {
+			return NextResponse.json(
+				{ success: false, error: 'Unauthorized' },
+				{ status: 401 },
+			);
+		}
+		const userId = session.user.id;
 
 		// Get user's wallets with total balance
 		const wallets = await prisma.wallet.findMany({
@@ -57,6 +64,28 @@ export async function GET() {
 			}),
 		}));
 
+		const user = await prisma.user.findUnique({
+			where: { id: userId },
+			select: {
+				fullName: true,
+				email: true,
+				isPremium: true,
+				avatarUrl: true,
+				memberSince: true,
+			},
+		});
+
+		// Tổng thu nhập
+		const totalIncome = await prisma.transaction.aggregate({
+			where: { userId, type: 'income' },
+			_sum: { amount: true },
+		});
+		// Tổng chi tiêu
+		const totalExpense = await prisma.transaction.aggregate({
+			where: { userId, type: 'expense' },
+			_sum: { amount: true },
+		});
+
 		return NextResponse.json({
 			success: true,
 			data: {
@@ -72,7 +101,10 @@ export async function GET() {
 				summary: {
 					totalWallets: wallets.length,
 					totalTransactions: recentTransactions.length,
+					totalIncome: Number(totalIncome._sum.amount) || 0,
+					totalExpense: Number(totalExpense._sum.amount) || 0,
 				},
+				user,
 			},
 		});
 	} catch (error) {

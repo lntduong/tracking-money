@@ -41,6 +41,14 @@ interface DashboardData {
 	summary: {
 		totalWallets: number;
 		totalTransactions: number;
+		totalIncome: number;
+		totalExpense: number;
+	};
+	user?: {
+		fullName: string;
+		email: string;
+		isPremium: boolean;
+		memberSince: string;
 	};
 }
 
@@ -151,11 +159,27 @@ export default function HomePage() {
 						<div className='flex justify-between items-end'>
 							<div>
 								<p className='text-slate-400 text-xs'>Chủ thẻ</p>
-								<p className='text-white text-sm font-semibold'>NGUYEN VAN A</p>
+								<p className='text-white text-sm font-semibold'>
+									{dashboardData?.user?.fullName || '---'}
+								</p>
+								<p className='text-slate-400 text-xs mt-1'>
+									{dashboardData?.user?.email || ''}
+								</p>
+								{dashboardData?.user?.isPremium && (
+									<span className='text-yellow-400 text-xs font-bold'>
+										Premium
+									</span>
+								)}
 							</div>
 							<div className='text-right'>
-								<p className='text-slate-400 text-xs'>Hết hạn</p>
-								<p className='text-white text-sm font-mono'>12/29</p>
+								<p className='text-slate-400 text-xs'>Tham gia</p>
+								<p className='text-white text-sm font-mono'>
+									{dashboardData?.user?.memberSince
+										? new Date(
+												dashboardData.user.memberSince,
+										  ).toLocaleDateString('vi-VN')
+										: '--/--'}
+								</p>
 							</div>
 						</div>
 
@@ -163,12 +187,24 @@ export default function HomePage() {
 						<div className='flex gap-4 mt-6 pt-4 border-t border-slate-700'>
 							<div className='flex-1 text-center'>
 								<TrendingUp className='w-5 h-5 text-emerald-400 mx-auto mb-1' />
-								<p className='text-emerald-400 text-sm font-bold'>+15M VNĐ</p>
+								<p className='text-emerald-400 text-sm font-bold'>
+									+
+									{dashboardData?.summary?.totalIncome?.toLocaleString(
+										'vi-VN',
+									) || '0'}{' '}
+									VNĐ
+								</p>
 								<p className='text-slate-400 text-xs'>Thu nhập</p>
 							</div>
 							<div className='flex-1 text-center'>
 								<TrendingDown className='w-5 h-5 text-rose-400 mx-auto mb-1' />
-								<p className='text-rose-400 text-sm font-bold'>-8.7M VNĐ</p>
+								<p className='text-rose-400 text-sm font-bold'>
+									-
+									{dashboardData?.summary?.totalExpense?.toLocaleString(
+										'vi-VN',
+									) || '0'}{' '}
+									VNĐ
+								</p>
 								<p className='text-slate-400 text-xs'>Chi tiêu</p>
 							</div>
 						</div>
@@ -295,90 +331,97 @@ export default function HomePage() {
 							</div>
 						) : dashboardData?.recentTransactions?.length ? (
 							<div className='divide-y divide-border'>
-								{dashboardData.recentTransactions.map((transaction) => (
-									<div
-										key={transaction.id}
-										className='p-4 flex justify-between items-center'
-									>
-										<div className='flex items-center space-x-3'>
-											<div
-												className={`w-10 h-10 rounded-full flex items-center justify-center ${
-													transaction.category.color === 'orange'
-														? 'bg-orange-100'
-														: transaction.category.color === 'blue'
-														? 'bg-blue-100'
-														: transaction.category.color === 'green'
-														? 'bg-green-100'
-														: transaction.category.color === 'red'
-														? 'bg-red-100'
-														: transaction.category.color === 'purple'
-														? 'bg-purple-100'
-														: transaction.category.color === 'yellow'
-														? 'bg-yellow-100'
-														: transaction.category.color === 'indigo'
-														? 'bg-indigo-100'
-														: transaction.category.color === 'teal'
-														? 'bg-teal-100'
-														: transaction.category.color === 'emerald'
-														? 'bg-emerald-100'
-														: 'bg-gray-100'
-												}`}
-											>
-												<span
-													className={`text-sm ${
+								{dashboardData.recentTransactions
+									.filter(
+										(transaction) =>
+											transaction.type === 'income' ||
+											transaction.type === 'expense',
+									)
+									.map((transaction) => (
+										<div
+											key={transaction.id}
+											className='p-4 flex justify-between items-center'
+										>
+											<div className='flex items-center space-x-3'>
+												<div
+													className={`w-10 h-10 rounded-full flex items-center justify-center ${
 														transaction.category.color === 'orange'
-															? 'text-orange-600'
+															? 'bg-orange-100'
 															: transaction.category.color === 'blue'
-															? 'text-blue-600'
+															? 'bg-blue-100'
 															: transaction.category.color === 'green'
-															? 'text-green-600'
+															? 'bg-green-100'
 															: transaction.category.color === 'red'
-															? 'text-red-600'
+															? 'bg-red-100'
 															: transaction.category.color === 'purple'
-															? 'text-purple-600'
+															? 'bg-purple-100'
 															: transaction.category.color === 'yellow'
-															? 'text-yellow-600'
+															? 'bg-yellow-100'
 															: transaction.category.color === 'indigo'
-															? 'text-indigo-600'
+															? 'bg-indigo-100'
 															: transaction.category.color === 'teal'
-															? 'text-teal-600'
+															? 'bg-teal-100'
 															: transaction.category.color === 'emerald'
-															? 'text-emerald-600'
-															: 'text-gray-600'
+															? 'bg-emerald-100'
+															: 'bg-gray-100'
 													}`}
 												>
-													{transaction.category.icon}
-												</span>
+													<span
+														className={`text-sm ${
+															transaction.category.color === 'orange'
+																? 'text-orange-600'
+																: transaction.category.color === 'blue'
+																? 'text-blue-600'
+																: transaction.category.color === 'green'
+																? 'text-green-600'
+																: transaction.category.color === 'red'
+																? 'text-red-600'
+																: transaction.category.color === 'purple'
+																? 'text-purple-600'
+																: transaction.category.color === 'yellow'
+																? 'text-yellow-600'
+																: transaction.category.color === 'indigo'
+																? 'text-indigo-600'
+																: transaction.category.color === 'teal'
+																? 'text-teal-600'
+																: transaction.category.color === 'emerald'
+																? 'text-emerald-600'
+																: 'text-gray-600'
+														}`}
+													>
+														{transaction.category.icon}
+													</span>
+												</div>
+												<div>
+													<p className='font-medium'>
+														{transaction.description ||
+															transaction.category.name}
+													</p>
+													<p className='text-sm text-muted-foreground'>
+														{new Date(transaction.date).toLocaleDateString(
+															'vi-VN',
+														)}
+														, {transaction.time}
+													</p>
+												</div>
 											</div>
-											<div>
-												<p className='font-medium'>
-													{transaction.description || transaction.category.name}
-												</p>
-												<p className='text-sm text-muted-foreground'>
-													{new Date(transaction.date).toLocaleDateString(
-														'vi-VN',
-													)}
-													, {transaction.time}
-												</p>
-											</div>
+											<Badge
+												variant={
+													transaction.type === 'income'
+														? 'default'
+														: 'destructive'
+												}
+												className={`font-semibold ${
+													transaction.type === 'income'
+														? 'bg-green-600 hover:bg-green-700'
+														: ''
+												}`}
+											>
+												{transaction.type === 'income' ? '+' : '-'}
+												{transaction.amount.toLocaleString('vi-VN')} VNĐ
+											</Badge>
 										</div>
-										<Badge
-											variant={
-												transaction.type === 'income'
-													? 'default'
-													: 'destructive'
-											}
-											className={`font-semibold ${
-												transaction.type === 'income'
-													? 'bg-green-600 hover:bg-green-700'
-													: ''
-											}`}
-										>
-											{transaction.type === 'income' ? '+' : '-'}
-											{transaction.amount.toLocaleString('vi-VN')} VNĐ
-										</Badge>
-									</div>
-								))}
+									))}
 							</div>
 						) : (
 							<div className='p-8 text-center'>

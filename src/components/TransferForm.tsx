@@ -15,9 +15,17 @@ import {
 import { ArrowLeftRight, ArrowDown } from 'lucide-react';
 import { useState } from 'react';
 
+interface Wallet {
+	id: string;
+	name: string;
+	balance: number;
+	type: { icon: string; name: string };
+}
+
 interface TransferFormProps {
 	onClose?: () => void;
 	onSubmit?: (data: TransferData) => void;
+	wallets: Wallet[];
 }
 
 interface TransferData {
@@ -27,25 +35,11 @@ interface TransferData {
 	note: string;
 }
 
-// Mock data - thực tế sẽ lấy từ API hoặc context
-const availableWallets = [
-	{ value: 'wallet1', label: 'Ví chính', balance: '1,250,000 VNĐ', icon: '💳' },
-	{
-		value: 'wallet2',
-		label: 'Thẻ tín dụng',
-		balance: '5,000,000 VNĐ',
-		icon: '💳',
-	},
-	{
-		value: 'wallet3',
-		label: 'Tài khoản tiết kiệm',
-		balance: '12,500,000 VNĐ',
-		icon: '💰',
-	},
-	{ value: 'wallet4', label: 'Ví điện tử', balance: '500,000 VNĐ', icon: '📱' },
-];
-
-export function TransferForm({ onClose, onSubmit }: TransferFormProps) {
+export function TransferForm({
+	onClose,
+	onSubmit,
+	wallets,
+}: TransferFormProps) {
 	const [formData, setFormData] = useState<TransferData>({
 		fromWallet: '',
 		toWallet: '',
@@ -60,13 +54,7 @@ export function TransferForm({ onClose, onSubmit }: TransferFormProps) {
 			return;
 		}
 		onSubmit?.(formData);
-		// Reset form
-		setFormData({
-			fromWallet: '',
-			toWallet: '',
-			amount: '',
-			note: '',
-		});
+		setFormData({ fromWallet: '', toWallet: '', amount: '', note: '' });
 	};
 
 	const handleSwapWallets = () => {
@@ -77,9 +65,8 @@ export function TransferForm({ onClose, onSubmit }: TransferFormProps) {
 		});
 	};
 
-	const getWalletInfo = (walletValue: string) => {
-		return availableWallets.find((w) => w.value === walletValue);
-	};
+	const getWalletInfo = (walletId: string) =>
+		wallets.find((w) => w.id === walletId);
 
 	return (
 		<div className='min-h-screen bg-muted/50 safe-area-top'>
@@ -128,15 +115,15 @@ export function TransferForm({ onClose, onSubmit }: TransferFormProps) {
 										<SelectValue placeholder='Chọn ví nguồn' />
 									</SelectTrigger>
 									<SelectContent>
-										{availableWallets.map((wallet) => (
-											<SelectItem key={wallet.value} value={wallet.value}>
+										{wallets.map((wallet) => (
+											<SelectItem key={wallet.id} value={wallet.id}>
 												<div className='flex items-center justify-between w-full'>
 													<div className='flex items-center space-x-2'>
-														<span className='text-lg'>{wallet.icon}</span>
-														<span>{wallet.label}</span>
+														<span className='text-lg'>{wallet.type.icon}</span>
+														<span>{wallet.name}</span>
 													</div>
 													<span className='text-sm text-muted-foreground ml-4'>
-														{wallet.balance}
+														{wallet.balance.toLocaleString('vi-VN')} VNĐ
 													</span>
 												</div>
 											</SelectItem>
@@ -145,7 +132,11 @@ export function TransferForm({ onClose, onSubmit }: TransferFormProps) {
 								</Select>
 								{formData.fromWallet && (
 									<p className='text-sm text-muted-foreground'>
-										Số dư: {getWalletInfo(formData.fromWallet)?.balance}
+										Số dư:{' '}
+										{getWalletInfo(formData.fromWallet)?.balance.toLocaleString(
+											'vi-VN',
+										)}{' '}
+										VNĐ
 									</p>
 								)}
 							</div>
@@ -178,17 +169,19 @@ export function TransferForm({ onClose, onSubmit }: TransferFormProps) {
 										<SelectValue placeholder='Chọn ví đích' />
 									</SelectTrigger>
 									<SelectContent>
-										{availableWallets
-											.filter((wallet) => wallet.value !== formData.fromWallet)
+										{wallets
+											.filter((wallet) => wallet.id !== formData.fromWallet)
 											.map((wallet) => (
-												<SelectItem key={wallet.value} value={wallet.value}>
+												<SelectItem key={wallet.id} value={wallet.id}>
 													<div className='flex items-center justify-between w-full'>
 														<div className='flex items-center space-x-2'>
-															<span className='text-lg'>{wallet.icon}</span>
-															<span>{wallet.label}</span>
+															<span className='text-lg'>
+																{wallet.type.icon}
+															</span>
+															<span>{wallet.name}</span>
 														</div>
 														<span className='text-sm text-muted-foreground ml-4'>
-															{wallet.balance}
+															{wallet.balance.toLocaleString('vi-VN')} VNĐ
 														</span>
 													</div>
 												</SelectItem>
@@ -197,7 +190,11 @@ export function TransferForm({ onClose, onSubmit }: TransferFormProps) {
 								</Select>
 								{formData.toWallet && (
 									<p className='text-sm text-muted-foreground'>
-										Số dư: {getWalletInfo(formData.toWallet)?.balance}
+										Số dư:{' '}
+										{getWalletInfo(formData.toWallet)?.balance.toLocaleString(
+											'vi-VN',
+										)}{' '}
+										VNĐ
 									</p>
 								)}
 							</div>
@@ -246,9 +243,9 @@ export function TransferForm({ onClose, onSubmit }: TransferFormProps) {
 										Xác nhận chuyển khoản:
 									</h4>
 									<div className='flex items-center justify-between text-sm'>
-										<span>Từ: {getWalletInfo(formData.fromWallet)?.label}</span>
+										<span>Từ: {getWalletInfo(formData.fromWallet)?.name}</span>
 										<ArrowLeftRight className='w-4 h-4 text-muted-foreground' />
-										<span>Đến: {getWalletInfo(formData.toWallet)?.label}</span>
+										<span>Đến: {getWalletInfo(formData.toWallet)?.name}</span>
 									</div>
 									<p className='text-center font-bold text-lg text-violet-600'>
 										{formData.amount} VNĐ

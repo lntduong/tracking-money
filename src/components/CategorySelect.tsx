@@ -6,26 +6,16 @@ import {
 	SelectValue,
 } from '@/components/ui/select';
 
-interface Category {
-	value: string;
-	label: string;
+export interface Category {
+	id: string;
+	name: string;
 	icon: string;
+	color?: string;
+	isDefault?: boolean;
 }
 
-const categories: Category[] = [
-	{ value: 'food', label: 'Ăn uống', icon: '🍔' },
-	{ value: 'transport', label: 'Đi lại', icon: '🚗' },
-	{ value: 'shopping', label: 'Mua sắm', icon: '🛍️' },
-	{ value: 'entertainment', label: 'Giải trí', icon: '🎮' },
-	{ value: 'health', label: 'Y tế', icon: '🏥' },
-	{ value: 'utilities', label: 'Tiện ích', icon: '⚡' },
-	{ value: 'education', label: 'Giáo dục', icon: '📚' },
-	{ value: 'travel', label: 'Du lịch', icon: '✈️' },
-	{ value: 'savings', label: 'Tiết kiệm', icon: '💰' },
-	{ value: 'other', label: 'Khác', icon: '📦' },
-];
-
 interface CategorySelectProps {
+	categories?: Category[];
 	value?: string;
 	onValueChange?: (value: string) => void;
 	placeholder?: string;
@@ -33,6 +23,7 @@ interface CategorySelectProps {
 }
 
 export function CategorySelect({
+	categories = [],
 	value,
 	onValueChange,
 	placeholder = 'Chọn danh mục',
@@ -45,10 +36,10 @@ export function CategorySelect({
 			</SelectTrigger>
 			<SelectContent>
 				{categories.map((category) => (
-					<SelectItem key={category.value} value={category.value}>
+					<SelectItem key={category.id} value={category.id}>
 						<div className='flex items-center space-x-2'>
 							<span className='text-lg'>{category.icon}</span>
-							<span>{category.label}</span>
+							<span>{category.name}</span>
 						</div>
 					</SelectItem>
 				))}

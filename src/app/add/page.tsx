@@ -7,13 +7,95 @@ import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
 import { CategorySelect } from '@/components/CategorySelect';
 import { TrendingUp, TrendingDown, Eye } from 'lucide-react';
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
+import {
+	Select,
+	SelectContent,
+	SelectItem,
+	SelectTrigger,
+	SelectValue,
+} from '@/components/ui/select';
+import type { Category } from '@/components/CategorySelect';
 
 type TransactionType = 'expense' | 'income';
+
+interface Wallet {
+	id: string;
+	name: string;
+	balance: number;
+	type: { icon: string; name: string };
+}
 
 export default function AddPage() {
 	const [transactionType, setTransactionType] =
 		useState<TransactionType>('expense');
+	const [amount, setAmount] = useState('');
+	const [categoryId, setCategoryId] = useState('');
+	const [walletId, setWalletId] = useState('');
+	const [note, setNote] = useState('');
+	const [wallets, setWallets] = useState<Wallet[]>([]);
+	const [loadingWallets, setLoadingWallets] = useState(true);
+	const [categories, setCategories] = useState<Category[]>([]);
+
+	useEffect(() => {
+		async function fetchWallets() {
+			try {
+				const res = await fetch('/api/wallets');
+				const result = await res.json();
+				if (result.success) {
+					setWallets(result.data.wallets);
+				}
+			} finally {
+				setLoadingWallets(false);
+			}
+		}
+		async function fetchCategories() {
+			try {
+				const res = await fetch('/api/categories');
+				const result = await res.json();
+				if (result.success) {
+					setCategories(result.data);
+				}
+			} finally {
+				// Không cần loadingCategories nên chỉ để finally cho đúng syntax
+			}
+		}
+		fetchWallets();
+		fetchCategories();
+	}, []);
+
+	const handleSubmit = async (e: React.FormEvent) => {
+		e.preventDefault();
+		if (!amount || !categoryId || !walletId) {
+			alert('Vui lòng nhập đầy đủ thông tin');
+			return;
+		}
+		try {
+			const res = await fetch('/api/transactions', {
+				method: 'POST',
+				headers: { 'Content-Type': 'application/json' },
+				body: JSON.stringify({
+					type: transactionType,
+					amount,
+					categoryId,
+					walletId,
+					description: note,
+				}),
+			});
+			const result = await res.json();
+			if (result.success) {
+				alert('Lưu giao dịch thành công!');
+				setAmount('');
+				setCategoryId('');
+				setWalletId('');
+				setNote('');
+			} else {
+				alert(result.error || 'Lưu giao dịch thất bại');
+			}
+		} catch {
+			alert('Có lỗi xảy ra khi lưu giao dịch');
+		}
+	};
 
 	return (
 		<div className='min-h-screen bg-muted/50 safe-area-top'>
@@ -115,92 +197,130 @@ export default function AddPage() {
 						</CardTitle>
 					</CardHeader>
 					<CardContent className='space-y-6'>
-						<div className='space-y-2'>
-							<Label
-								htmlFor='amount'
-								className='text-base font-medium text-slate-700'
-							>
-								Số tiền
-							</Label>
-							<Input
-								id='amount'
-								type='text'
-								inputMode='numeric'
-								placeholder='0'
-								className={`text-2xl text-center border-2 bg-white ${
+						<form onSubmit={handleSubmit} className='space-y-6'>
+							<div className='space-y-2'>
+								<Label
+									htmlFor='amount'
+									className='text-base font-medium text-slate-700'
+								>
+									Số tiền
+								</Label>
+								<Input
+									id='amount'
+									type='text'
+									inputMode='numeric'
+									placeholder='0'
+									value={amount}
+									onChange={(e) => setAmount(e.target.value)}
+									className={`text-2xl text-center border-2 bg-white ${
+										transactionType === 'expense'
+											? 'focus:border-rose-500'
+											: 'focus:border-emerald-500'
+									}`}
+								/>
+								<p className='text-sm text-muted-foreground'>
+									Nhập số tiền{' '}
+									{transactionType === 'expense' ? 'chi tiêu' : 'thu nhập'}
+								</p>
+							</div>
+							<div className='space-y-2'>
+								<Label
+									htmlFor='category'
+									className='text-base font-medium text-slate-700'
+								>
+									Danh mục
+								</Label>
+								<CategorySelect
+									className={`h-12 w-full border-2 ${
+										transactionType === 'expense'
+											? 'focus:border-rose-500'
+											: 'focus:border-emerald-500'
+									}`}
+									placeholder={
+										transactionType === 'expense'
+											? 'Chọn danh mục chi tiêu'
+											: 'Chọn danh mục thu nhập'
+									}
+									value={categoryId}
+									onValueChange={setCategoryId}
+									categories={categories}
+								/>
+							</div>
+							<div className='space-y-2'>
+								<Label
+									htmlFor='wallet'
+									className='text-base font-medium text-slate-700'
+								>
+									Chọn ví
+								</Label>
+								{loadingWallets ? (
+									<div className='text-sm text-muted-foreground'>
+										Đang tải ví...
+									</div>
+								) : (
+									<Select value={walletId} onValueChange={setWalletId}>
+										<SelectTrigger className='h-12 w-full border-2'>
+											<SelectValue placeholder='Chọn ví sử dụng' />
+										</SelectTrigger>
+										<SelectContent>
+											{wallets.map((wallet) => (
+												<SelectItem key={wallet.id} value={wallet.id}>
+													<div className='flex items-center gap-2'>
+														<span className='text-lg'>{wallet.type.icon}</span>
+														<span>{wallet.name}</span>
+														<span className='ml-auto text-xs text-muted-foreground'>
+															{wallet.balance.toLocaleString('vi-VN')} VNĐ
+														</span>
+													</div>
+												</SelectItem>
+											))}
+										</SelectContent>
+									</Select>
+								)}
+							</div>
+							<div className='space-y-2'>
+								<Label
+									htmlFor='note'
+									className='text-base font-medium text-slate-700'
+								>
+									Ghi chú (tùy chọn)
+								</Label>
+								<Textarea
+									id='note'
+									placeholder={`Mô tả chi tiết về ${
+										transactionType === 'expense'
+											? 'khoản chi tiêu'
+											: 'khoản thu nhập'
+									} này...`}
+									value={note}
+									onChange={(e) => setNote(e.target.value)}
+									className={`min-h-[80px] resize-none border-2 bg-white ${
+										transactionType === 'expense'
+											? 'focus:border-rose-500'
+											: 'focus:border-emerald-500'
+									}`}
+									rows={3}
+								/>
+							</div>
+							<Button
+								type='submit'
+								size='lg'
+								className={`w-full h-14 text-lg font-semibold shadow-lg transition-all duration-200 ${
 									transactionType === 'expense'
-										? 'focus:border-rose-500'
-										: 'focus:border-emerald-500'
+										? 'bg-gradient-to-r from-rose-600 to-pink-600 hover:from-rose-700 hover:to-pink-700'
+										: 'bg-gradient-to-r from-emerald-600 to-green-600 hover:from-emerald-700 hover:to-green-700'
 								}`}
-							/>
-							<p className='text-sm text-muted-foreground'>
-								Nhập số tiền{' '}
-								{transactionType === 'expense' ? 'chi tiêu' : 'thu nhập'}
-							</p>
-						</div>
-
-						<div className='space-y-2'>
-							<Label
-								htmlFor='category'
-								className='text-base font-medium text-slate-700'
 							>
-								Danh mục
-							</Label>
-							<CategorySelect
-								className={`h-12 w-full border-2 ${
-									transactionType === 'expense'
-										? 'focus:border-rose-500'
-										: 'focus:border-emerald-500'
-								}`}
-								placeholder={
-									transactionType === 'expense'
-										? 'Chọn danh mục chi tiêu'
-										: 'Chọn danh mục thu nhập'
-								}
-							/>
-						</div>
-
-						<div className='space-y-2'>
-							<Label
-								htmlFor='note'
-								className='text-base font-medium text-slate-700'
-							>
-								Ghi chú (tùy chọn)
-							</Label>
-							<Textarea
-								id='note'
-								placeholder={`Mô tả chi tiết về ${
-									transactionType === 'expense'
-										? 'khoản chi tiêu'
-										: 'khoản thu nhập'
-								} này...`}
-								className={`min-h-[80px] resize-none border-2 bg-white ${
-									transactionType === 'expense'
-										? 'focus:border-rose-500'
-										: 'focus:border-emerald-500'
-								}`}
-								rows={3}
-							/>
-						</div>
+								{transactionType === 'expense' ? (
+									<TrendingDown className='w-6 h-6 mr-2' />
+								) : (
+									<TrendingUp className='w-6 h-6 mr-2' />
+								)}
+								Lưu {transactionType === 'expense' ? 'chi tiêu' : 'thu nhập'}
+							</Button>
+						</form>
 					</CardContent>
 				</Card>
-
-				{/* Action Button */}
-				<Button
-					size='lg'
-					className={`w-full h-14 text-lg font-semibold shadow-lg transition-all duration-200 ${
-						transactionType === 'expense'
-							? 'bg-gradient-to-r from-rose-600 to-pink-600 hover:from-rose-700 hover:to-pink-700'
-							: 'bg-gradient-to-r from-emerald-600 to-green-600 hover:from-emerald-700 hover:to-green-700'
-					}`}
-				>
-					{transactionType === 'expense' ? (
-						<TrendingDown className='w-6 h-6 mr-2' />
-					) : (
-						<TrendingUp className='w-6 h-6 mr-2' />
-					)}
-					Lưu {transactionType === 'expense' ? 'chi tiêu' : 'thu nhập'}
-				</Button>
 			</div>
 		</div>
 	);

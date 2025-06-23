@@ -1,11 +1,40 @@
+'use client';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Separator } from '@/components/ui/separator';
 import { Progress } from '@/components/ui/progress';
 import { TrendingUp, TrendingDown, PieChart, BarChart3 } from 'lucide-react';
+import { useEffect, useState } from 'react';
+
+type CategoryBreakdown = {
+	name: string;
+	icon: string;
+	color: string;
+	amount: number;
+	count: number;
+	percentage: number;
+};
 
 export default function ReportsPage() {
+	const [reportData, setReportData] = useState<{
+		categoryBreakdown: CategoryBreakdown[];
+	} | null>(null);
+	const [loading, setLoading] = useState(true);
+
+	useEffect(() => {
+		async function fetchReport() {
+			try {
+				const res = await fetch('/api/reports');
+				const result = await res.json();
+				if (result.success) setReportData(result.data);
+			} finally {
+				setLoading(false);
+			}
+		}
+		fetchReport();
+	}, []);
+
 	return (
 		<div className='min-h-screen bg-muted/50 safe-area-top'>
 			{/* Header */}
@@ -100,117 +129,42 @@ export default function ReportsPage() {
 						</CardTitle>
 					</CardHeader>
 					<CardContent>
-						<div className='space-y-5'>
-							{/* Ăn uống */}
-							<div className='space-y-2'>
-								<div className='flex justify-between items-center'>
-									<div className='flex items-center space-x-3'>
-										<div className='w-10 h-10 bg-gradient-to-br from-orange-100 to-red-100 rounded-full flex items-center justify-center border border-orange-200'>
-											<span className='text-lg'>🍔</span>
+						{loading ? (
+							<div className='p-8 text-center'>Đang tải...</div>
+						) : reportData?.categoryBreakdown?.length ? (
+							<div className='space-y-5'>
+								{reportData.categoryBreakdown.map((cat: CategoryBreakdown) => (
+									<div className='space-y-2' key={cat.name}>
+										<div className='flex justify-between items-center'>
+											<div className='flex items-center space-x-3'>
+												<div
+													className={`w-10 h-10 rounded-full flex items-center justify-center border`}
+													style={{ background: `var(--cat-bg-${cat.color})` }}
+												>
+													<span className='text-lg'>{cat.icon}</span>
+												</div>
+												<div>
+													<span className='font-semibold text-gray-900'>
+														{cat.name}
+													</span>
+													<p className='text-xs text-gray-500'>
+														{cat.percentage.toFixed(1)}% tổng chi tiêu
+													</p>
+												</div>
+											</div>
+											<Badge variant='outline' className={`font-bold border`}>
+												{cat.amount.toLocaleString('vi-VN')} VNĐ
+											</Badge>
 										</div>
-										<div>
-											<span className='font-semibold text-gray-900'>
-												Ăn uống
-											</span>
-											<p className='text-xs text-gray-500'>
-												36.6% tổng chi tiêu
-											</p>
-										</div>
+										<Progress value={cat.percentage} className='h-2' />
 									</div>
-									<Badge
-										variant='outline'
-										className='font-bold text-orange-700 border-orange-300'
-									>
-										3,200,000 VNĐ
-									</Badge>
-								</div>
-								<Progress value={36.6} className='h-2 bg-orange-100' />
+								))}
 							</div>
-
-							<Separator />
-
-							{/* Mua sắm */}
-							<div className='space-y-2'>
-								<div className='flex justify-between items-center'>
-									<div className='flex items-center space-x-3'>
-										<div className='w-10 h-10 bg-gradient-to-br from-purple-100 to-pink-100 rounded-full flex items-center justify-center border border-purple-200'>
-											<span className='text-lg'>🛍️</span>
-										</div>
-										<div>
-											<span className='font-semibold text-gray-900'>
-												Mua sắm
-											</span>
-											<p className='text-xs text-gray-500'>
-												32.0% tổng chi tiêu
-											</p>
-										</div>
-									</div>
-									<Badge
-										variant='outline'
-										className='font-bold text-purple-700 border-purple-300'
-									>
-										2,800,000 VNĐ
-									</Badge>
-								</div>
-								<Progress value={32.0} className='h-2 bg-purple-100' />
+						) : (
+							<div className='p-8 text-center text-muted-foreground'>
+								Không có dữ liệu
 							</div>
-
-							<Separator />
-
-							{/* Đi lại */}
-							<div className='space-y-2'>
-								<div className='flex justify-between items-center'>
-									<div className='flex items-center space-x-3'>
-										<div className='w-10 h-10 bg-gradient-to-br from-blue-100 to-cyan-100 rounded-full flex items-center justify-center border border-blue-200'>
-											<span className='text-lg'>🚗</span>
-										</div>
-										<div>
-											<span className='font-semibold text-gray-900'>
-												Đi lại
-											</span>
-											<p className='text-xs text-gray-500'>
-												17.1% tổng chi tiêu
-											</p>
-										</div>
-									</div>
-									<Badge
-										variant='outline'
-										className='font-bold text-blue-700 border-blue-300'
-									>
-										1,500,000 VNĐ
-									</Badge>
-								</div>
-								<Progress value={17.1} className='h-2 bg-blue-100' />
-							</div>
-
-							<Separator />
-
-							{/* Giải trí */}
-							<div className='space-y-2'>
-								<div className='flex justify-between items-center'>
-									<div className='flex items-center space-x-3'>
-										<div className='w-10 h-10 bg-gradient-to-br from-green-100 to-emerald-100 rounded-full flex items-center justify-center border border-green-200'>
-											<span className='text-lg'>🎮</span>
-										</div>
-										<div>
-											<span className='font-semibold text-gray-900'>
-												Giải trí
-											</span>
-											<p className='text-xs text-gray-500'>
-												14.3% tổng chi tiêu
-											</p>
-										</div>
-									</div>
-									<Badge
-										variant='outline'
-										className='font-bold text-green-700 border-green-300'
-									>
-										1,250,000 VNĐ
-									</Badge>
-								</div>
-								<Progress value={14.3} className='h-2 bg-green-100' />
-							</div>
-						</div>
+						)}
 					</CardContent>
 				</Card>
 			</div>

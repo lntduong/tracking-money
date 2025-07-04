@@ -17,6 +17,7 @@ import { signOut, useSession } from 'next-auth/react';
 import { useRouter } from 'next/navigation';
 import { format } from 'date-fns';
 import { vi } from 'date-fns/locale';
+import Image from 'next/image';
 
 interface AccountData {
 	id: string;
@@ -35,7 +36,7 @@ interface AccountData {
 
 export default function AccountPage() {
 	const router = useRouter();
-	const { data: session, status } = useSession();
+	const { status } = useSession();
 	const [accountData, setAccountData] = useState<AccountData | null>(null);
 	const [loading, setLoading] = useState(true);
 	const [error, setError] = useState<string | null>(null);
@@ -50,7 +51,7 @@ export default function AccountPage() {
 		if (status === 'authenticated') {
 			fetchAccountData();
 		}
-	}, [status, retryCount]);
+	}, [status, retryCount, router]);
 
 	const fetchAccountData = async () => {
 		try {
@@ -196,9 +197,11 @@ export default function AccountPage() {
 							<div className='relative'>
 								<Avatar className='w-20 h-20 border-4 border-purple-200'>
 									{accountData.avatarUrl ? (
-										<img
+										<Image
 											src={accountData.avatarUrl}
 											alt={accountData.fullName}
+											width={80}
+											height={80}
 											className='w-full h-full object-cover'
 										/>
 									) : (

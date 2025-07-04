@@ -34,14 +34,24 @@ export async function GET() {
 		});
 
 		// Format response data
-		const formattedCategories = categories.map((category) => ({
-			id: category.id,
-			name: category.name,
-			icon: category.icon,
-			color: category.color,
-			isDefault: category.isDefault,
-			transactionCount: category._count.transactions,
-		}));
+		const formattedCategories = categories.map(
+			(category: {
+				id: string;
+				name: string;
+				icon: string;
+				color: string;
+				isDefault: boolean;
+				_count: { transactions: number };
+				userId: string | null;
+			}) => ({
+				id: category.id,
+				name: category.name,
+				icon: category.icon,
+				color: category.color,
+				isDefault: category.isDefault,
+				transactionCount: category._count.transactions,
+			}),
+		);
 
 		return NextResponse.json({
 			success: true,

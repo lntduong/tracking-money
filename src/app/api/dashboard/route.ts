@@ -26,9 +26,16 @@ export async function GET() {
 		});
 
 		// Calculate total balance
-		const totalBalance = wallets.reduce((sum, wallet) => {
-			return sum + Number(wallet.currentBalance);
-		}, 0);
+		const totalBalance = wallets.reduce(
+			(sum, wallet) =>
+				sum +
+				(wallet.currentBalance &&
+				typeof wallet.currentBalance === 'object' &&
+				'toNumber' in wallet.currentBalance
+					? wallet.currentBalance.toNumber()
+					: Number(wallet.currentBalance)),
+			0,
+		);
 
 		// Get recent transactions (last 5)
 		const recentTransactions = await prisma.transaction.findMany({
@@ -49,7 +56,12 @@ export async function GET() {
 		const formattedTransactions = recentTransactions.map((transaction) => ({
 			id: transaction.id,
 			type: transaction.type,
-			amount: Number(transaction.amount),
+			amount:
+				transaction.amount &&
+				typeof transaction.amount === 'object' &&
+				'toNumber' in transaction.amount
+					? transaction.amount.toNumber()
+					: Number(transaction.amount),
 			category: {
 				name: transaction.category?.name || 'Khác',
 				icon: transaction.category?.icon || '📦',
@@ -94,7 +106,12 @@ export async function GET() {
 					id: wallet.id,
 					name: wallet.name,
 					type: wallet.type.name,
-					balance: Number(wallet.currentBalance),
+					balance:
+						wallet.currentBalance &&
+						typeof wallet.currentBalance === 'object' &&
+						'toNumber' in wallet.currentBalance
+							? wallet.currentBalance.toNumber()
+							: Number(wallet.currentBalance),
 					icon: wallet.type.icon,
 				})),
 				recentTransactions: formattedTransactions,

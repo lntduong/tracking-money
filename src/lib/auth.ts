@@ -3,31 +3,6 @@ import CredentialsProvider from 'next-auth/providers/credentials';
 import { prisma } from '@/lib/prisma';
 import bcrypt from 'bcryptjs';
 
-// Extend next-auth types
-declare module 'next-auth' {
-	interface User {
-		id: string;
-		email: string;
-		name: string;
-		image?: string | null;
-		isPremium: boolean;
-	}
-
-	interface Session {
-		user: User & {
-			id: string;
-			isPremium: boolean;
-		};
-	}
-}
-
-declare module 'next-auth/jwt' {
-	interface JWT {
-		id: string;
-		isPremium: boolean;
-	}
-}
-
 export const authOptions: NextAuthOptions = {
 	providers: [
 		CredentialsProvider({
@@ -77,7 +52,7 @@ export const authOptions: NextAuthOptions = {
 						id: user.id, // This should be the UUID from database
 						email: user.email,
 						name: user.fullName,
-						image: user.avatarUrl,
+						image: user.avatarUrl || undefined,
 						isPremium: user.isPremium,
 					};
 				} catch (error) {

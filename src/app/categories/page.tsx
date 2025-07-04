@@ -57,7 +57,7 @@ export default function CategoriesPage() {
 		if (status === 'authenticated') {
 			fetchCategories();
 		}
-	}, [status]);
+	}, [status, router]);
 
 	const fetchCategories = async () => {
 		try {
@@ -307,7 +307,7 @@ export default function CategoriesPage() {
 									<div className='absolute z-50 top-12 right-0 min-w-[320px] max-w-xs shadow-lg rounded-xl border bg-white'>
 										<Picker
 											data={data}
-											onEmojiSelect={(emoji: any) => {
+											onEmojiSelect={(emoji: { native: string }) => {
 												setNewCategoryIcon(emoji.native);
 												setShowNewIconPicker(false);
 											}}
@@ -423,7 +423,9 @@ export default function CategoriesPage() {
 																<div className='absolute z-50 bottom-12 left-0 min-w-[320px] max-w-xs shadow-lg rounded-xl border bg-white'>
 																	<Picker
 																		data={data}
-																		onEmojiSelect={(emoji: any) => {
+																		onEmojiSelect={(emoji: {
+																			native: string;
+																		}) => {
 																			setEditIcon(emoji.native);
 																			setShowEditIconPicker(false);
 																		}}

@@ -21,12 +21,12 @@ interface AddWalletFormProps {
 	onSubmit?: (data: WalletData) => void;
 }
 
-interface WalletData {
+export type WalletData = {
 	name: string;
 	walletType: string;
 	initialBalance: string;
 	description: string;
-}
+};
 
 interface WalletType {
 	id: string;

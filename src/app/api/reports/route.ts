@@ -66,11 +66,25 @@ export async function GET(request: Request) {
 		// Calculate summary statistics
 		const income = transactions
 			.filter((t) => t.type === 'income')
-			.reduce((sum, t) => sum + Number(t.amount), 0);
+			.reduce(
+				(sum, t) =>
+					sum +
+					(typeof t.amount === 'object' && 'toNumber' in t.amount
+						? t.amount.toNumber()
+						: Number(t.amount)),
+				0,
+			);
 
 		const expenses = transactions
 			.filter((t) => t.type === 'expense')
-			.reduce((sum, t) => sum + Number(t.amount), 0);
+			.reduce(
+				(sum, t) =>
+					sum +
+					(typeof t.amount === 'object' && 'toNumber' in t.amount
+						? t.amount.toNumber()
+						: Number(t.amount)),
+				0,
+			);
 
 		const savings = income - expenses;
 
@@ -92,14 +106,25 @@ export async function GET(request: Request) {
 					};
 				}
 
-				acc[categoryName].amount += Number(t.amount);
+				acc[categoryName].amount +=
+					typeof t.amount === 'object' && 'toNumber' in t.amount
+						? t.amount.toNumber()
+						: Number(t.amount);
 				acc[categoryName].count += 1;
 
 				return acc;
 			}, {} as Record<string, { name: string; icon: string; color: string; amount: number; count: number }>);
 
 		// Convert to array and sort by amount
-		const categoryBreakdown = Object.values(expensesByCategory)
+		const categoryBreakdown = (
+			Object.values(expensesByCategory) as {
+				amount: number;
+				name: string;
+				icon: string;
+				color: string;
+				count: number;
+			}[]
+		)
 			.sort((a, b) => b.amount - a.amount)
 			.map((cat) => ({
 				...cat,
@@ -124,15 +149,24 @@ export async function GET(request: Request) {
 					};
 				}
 
-				acc[walletName].amount += Number(t.amount);
+				acc[walletName].amount +=
+					typeof t.amount === 'object' && 'toNumber' in t.amount
+						? t.amount.toNumber()
+						: Number(t.amount);
 				acc[walletName].count += 1;
 
 				return acc;
 			}, {} as Record<string, { name: string; type: string; icon: string; amount: number; count: number }>);
 
-		const walletBreakdown = Object.values(expensesByWallet).sort(
-			(a, b) => b.amount - a.amount,
-		);
+		const walletBreakdown = (
+			Object.values(expensesByWallet) as {
+				amount: number;
+				name: string;
+				type: string;
+				icon: string;
+				count: number;
+			}[]
+		).sort((a, b) => b.amount - a.amount);
 
 		// Daily trend for the period
 		const dailyTrend = transactions.reduce((acc, t) => {
@@ -143,23 +177,36 @@ export async function GET(request: Request) {
 			}
 
 			if (t.type === 'income') {
-				acc[date].income += Number(t.amount);
+				acc[date].income +=
+					typeof t.amount === 'object' && 'toNumber' in t.amount
+						? t.amount.toNumber()
+						: Number(t.amount);
 			} else {
-				acc[date].expenses += Number(t.amount);
+				acc[date].expenses +=
+					typeof t.amount === 'object' && 'toNumber' in t.amount
+						? t.amount.toNumber()
+						: Number(t.amount);
 			}
 
 			return acc;
 		}, {} as Record<string, { date: string; income: number; expenses: number }>);
 
-		const trendData = Object.values(dailyTrend).sort((a, b) =>
-			a.date.localeCompare(b.date),
-		);
+		const trendData = (
+			Object.values(dailyTrend) as {
+				date: string;
+				income: number;
+				expenses: number;
+			}[]
+		).sort((a, b) => a.date.localeCompare(b.date));
 
 		// Recent transactions (last 10)
 		const recentTransactions = transactions.slice(0, 10).map((t) => ({
 			id: t.id,
 			type: t.type,
-			amount: Number(t.amount),
+			amount:
+				typeof t.amount === 'object' && 'toNumber' in t.amount
+					? t.amount.toNumber()
+					: Number(t.amount),
 			description: t.description,
 			date: t.transactionDate,
 			category: t.category

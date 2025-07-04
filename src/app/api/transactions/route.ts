@@ -2,6 +2,7 @@ import { NextResponse } from 'next/server';
 import { prisma } from '@/lib/prisma';
 import { getServerSession } from 'next-auth';
 import { authOptions } from '@/lib/auth';
+import type { Prisma } from '@prisma/client';
 
 export async function POST(request: Request) {
 	try {
@@ -56,33 +57,35 @@ export async function POST(request: Request) {
 		}
 
 		// Thực hiện transaction: cập nhật số dư ví và lưu giao dịch
-		const transaction = await prisma.$transaction(async (tx) => {
-			// Cập nhật số dư ví
-			await tx.wallet.update({
-				where: { id: walletId },
-				data: {
-					currentBalance:
-						type === 'income'
-							? { increment: Number(amount) }
-							: { decrement: Number(amount) },
-				},
-			});
-			// Lưu giao dịch
-			const newTransaction = await tx.transaction.create({
-				data: {
-					userId,
-					walletId,
-					categoryId,
-					type,
-					amount: Number(amount),
-					description: description || '',
-					transactionDate: transactionDate
-						? new Date(transactionDate)
-						: new Date(),
-				},
-			});
-			return newTransaction;
-		});
+		const transaction = await prisma.$transaction(
+			async (tx: Prisma.TransactionClient) => {
+				// Cập nhật số dư ví
+				await tx.wallet.update({
+					where: { id: walletId },
+					data: {
+						currentBalance:
+							type === 'income'
+								? { increment: Number(amount) }
+								: { decrement: Number(amount) },
+					},
+				});
+				// Lưu giao dịch
+				const newTransaction = await tx.transaction.create({
+					data: {
+						userId,
+						walletId,
+						categoryId,
+						type,
+						amount: Number(amount),
+						description: description || '',
+						transactionDate: transactionDate
+							? new Date(transactionDate)
+							: new Date(),
+					},
+				});
+				return newTransaction;
+			},
+		);
 
 		return NextResponse.json({ success: true, data: transaction });
 	} catch (error) {

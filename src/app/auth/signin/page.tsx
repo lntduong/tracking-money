@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, Suspense } from 'react';
 import Link from 'next/link';
 import { useRouter, useSearchParams } from 'next/navigation';
 import { signIn, getSession } from 'next-auth/react';
@@ -17,7 +17,15 @@ import {
 	EyeOff,
 } from 'lucide-react';
 
-export default function SigninPage() {
+export default function SigninPageWrapper() {
+	return (
+		<Suspense>
+			<SigninPage />
+		</Suspense>
+	);
+}
+
+function SigninPage() {
 	const router = useRouter();
 	const searchParams = useSearchParams();
 	const [formData, setFormData] = useState({

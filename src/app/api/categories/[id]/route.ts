@@ -5,7 +5,7 @@ import { authOptions } from '@/lib/auth';
 
 export async function DELETE(
 	request: Request,
-	context: { params: { id: string } },
+	context: { params: Promise<{ id: string }> },
 ) {
 	try {
 		const session = await getServerSession(authOptions);
@@ -20,7 +20,7 @@ export async function DELETE(
 		}
 
 		const userId = session.user.id;
-		const { id: categoryId } = await Promise.resolve(context.params);
+		const { id: categoryId } = await context.params;
 
 		// Check if category exists and belongs to user
 		const category = await prisma.category.findFirst({
@@ -76,7 +76,7 @@ export async function DELETE(
 
 export async function PATCH(
 	request: Request,
-	context: { params: { id: string } },
+	context: { params: Promise<{ id: string }> },
 ) {
 	try {
 		const session = await getServerSession(authOptions);
@@ -91,7 +91,7 @@ export async function PATCH(
 		}
 
 		const userId = session.user.id;
-		const { id: categoryId } = await Promise.resolve(context.params);
+		const { id: categoryId } = await context.params;
 		const { name, icon, color } = await request.json();
 
 		// Check if category exists and belongs to user

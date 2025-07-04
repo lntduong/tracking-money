@@ -2,13 +2,7 @@
 
 import { AddWalletForm } from '@/components/AddWalletForm';
 import { useRouter } from 'next/navigation';
-
-interface WalletData {
-	name: string;
-	type: string;
-	initialBalance: string;
-	description: string;
-}
+import type { WalletData } from '@/components/AddWalletForm';
 
 export default function AddWalletPage() {
 	const router = useRouter();

@@ -34,9 +34,15 @@ export async function GET() {
 		});
 
 		// Calculate total balance across all wallets
-		const totalBalance = wallets.reduce((sum, wallet) => {
-			return sum + Number(wallet.currentBalance);
-		}, 0);
+		const totalBalance = wallets.reduce(
+			(sum, wallet) =>
+				sum +
+				(typeof wallet.currentBalance === 'object' &&
+				'toNumber' in wallet.currentBalance
+					? wallet.currentBalance.toNumber()
+					: Number(wallet.currentBalance)),
+			0,
+		);
 
 		// Format wallets for UI
 		const formattedWallets = wallets.map((wallet) => ({
@@ -48,7 +54,11 @@ export async function GET() {
 				icon: wallet.type.icon,
 				description: wallet.type.description,
 			},
-			balance: Number(wallet.currentBalance),
+			balance:
+				typeof wallet.currentBalance === 'object' &&
+				'toNumber' in wallet.currentBalance
+					? wallet.currentBalance.toNumber()
+					: Number(wallet.currentBalance),
 			transactionCount: wallet._count.transactions,
 			description: wallet.description,
 			isActive: wallet.isActive,
@@ -62,7 +72,9 @@ export async function GET() {
 				totalBalance,
 				summary: {
 					totalWallets: wallets.length,
-					activeWallets: wallets.filter((w) => w.isActive).length,
+					activeWallets: wallets.filter(
+						(w: { isActive: boolean }) => w.isActive,
+					).length,
 				},
 			},
 		});

@@ -19,6 +19,12 @@ type CategoryBreakdown = {
 export default function ReportsPage() {
 	const [reportData, setReportData] = useState<{
 		categoryBreakdown: CategoryBreakdown[];
+		summary?: {
+			income: number;
+			expenses: number;
+			savings: number;
+			transactionCount: number;
+		};
 	} | null>(null);
 	const [loading, setLoading] = useState(true);
 
@@ -78,45 +84,59 @@ export default function ReportsPage() {
 						</CardTitle>
 					</CardHeader>
 					<CardContent>
-						<div className='grid grid-cols-2 gap-3'>
-							<div className='bg-gradient-to-br from-emerald-50 to-green-50 p-4 rounded-2xl border border-emerald-100'>
-								<div className='flex justify-center mb-3'>
-									<TrendingUp className='h-7 w-7 text-emerald-600' />
+						{loading ? (
+							<div className='p-8 text-center'>Đang tải...</div>
+						) : reportData?.summary ? (
+							<div>
+								<div className='grid grid-cols-2 gap-3'>
+									<div className='bg-gradient-to-br from-emerald-50 to-green-50 p-4 rounded-2xl border border-emerald-100'>
+										<div className='flex justify-center mb-3'>
+											<TrendingUp className='h-7 w-7 text-emerald-600' />
+										</div>
+										<p className='text-center text-sm text-emerald-700 font-medium mb-3'>
+											Thu nhập
+										</p>
+										<div className='flex justify-center'>
+											<div className='bg-emerald-600 text-white px-4 py-2 rounded-xl font-bold text-base'>
+												+{reportData.summary.income.toLocaleString('vi-VN')}
+											</div>
+										</div>
+									</div>
+									<div className='bg-gradient-to-br from-rose-50 to-red-50 p-4 rounded-2xl border border-rose-100'>
+										<div className='flex justify-center mb-3'>
+											<TrendingDown className='h-7 w-7 text-rose-600' />
+										</div>
+										<p className='text-center text-sm text-rose-700 font-medium mb-3'>
+											Chi tiêu
+										</p>
+										<div className='flex justify-center'>
+											<div className='bg-rose-600 text-white px-4 py-2 rounded-xl font-bold text-base'>
+												-{reportData.summary.expenses.toLocaleString('vi-VN')}
+											</div>
+										</div>
+									</div>
 								</div>
-								<p className='text-center text-sm text-emerald-700 font-medium mb-3'>
-									Thu nhập
-								</p>
-								<div className='flex justify-center'>
-									<div className='bg-emerald-600 text-white px-4 py-2 rounded-xl font-bold text-base'>
-										+15,000,000
+								<Separator className='my-6' />
+								<div className='bg-gradient-to-br from-blue-50 to-indigo-50 p-4 rounded-2xl border border-blue-100'>
+									<p className='text-center text-sm text-blue-700 font-medium mb-3'>
+										Tiết kiệm trong tháng
+									</p>
+									<div className='flex justify-center'>
+										<div className='bg-blue-600 text-white px-6 py-3 rounded-xl font-bold text-xl'>
+											{reportData.summary.savings >= 0 ? '+' : '-'}
+											{Math.abs(reportData.summary.savings).toLocaleString(
+												'vi-VN',
+											)}{' '}
+											VNĐ
+										</div>
 									</div>
 								</div>
 							</div>
-							<div className='bg-gradient-to-br from-rose-50 to-red-50 p-4 rounded-2xl border border-rose-100'>
-								<div className='flex justify-center mb-3'>
-									<TrendingDown className='h-7 w-7 text-rose-600' />
-								</div>
-								<p className='text-center text-sm text-rose-700 font-medium mb-3'>
-									Chi tiêu
-								</p>
-								<div className='flex justify-center'>
-									<div className='bg-rose-600 text-white px-4 py-2 rounded-xl font-bold text-base'>
-										-8,750,000
-									</div>
-								</div>
+						) : (
+							<div className='p-8 text-center text-muted-foreground'>
+								Không có dữ liệu
 							</div>
-						</div>
-						<Separator className='my-6' />
-						<div className='bg-gradient-to-br from-blue-50 to-indigo-50 p-4 rounded-2xl border border-blue-100'>
-							<p className='text-center text-sm text-blue-700 font-medium mb-3'>
-								Tiết kiệm trong tháng
-							</p>
-							<div className='flex justify-center'>
-								<div className='bg-blue-600 text-white px-6 py-3 rounded-xl font-bold text-xl'>
-									+6,250,000 VNĐ
-								</div>
-							</div>
-						</div>
+						)}
 					</CardContent>
 				</Card>
 

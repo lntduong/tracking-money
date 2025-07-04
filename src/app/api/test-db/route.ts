@@ -28,11 +28,17 @@ export async function GET() {
 							name: demoUser.fullName,
 							email: demoUser.email,
 							isPremium: demoUser.isPremium,
-							wallets: demoUser.wallets.map((w: any) => ({
-								name: w.name,
-								type: w.type.name,
-								balance: w.currentBalance,
-							})),
+							wallets: demoUser.wallets.map(
+								(w: {
+									name: string;
+									type: { name: string };
+									currentBalance: unknown;
+								}) => ({
+									name: w.name,
+									type: w.type.name,
+									currentBalance: Number(w.currentBalance),
+								}),
+							),
 							settings: demoUser.settings,
 					  }
 					: null,

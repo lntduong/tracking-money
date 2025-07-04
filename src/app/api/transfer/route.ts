@@ -2,6 +2,7 @@ import { NextResponse } from 'next/server';
 import { prisma } from '@/lib/prisma';
 import { getServerSession } from 'next-auth';
 import { authOptions } from '@/lib/auth';
+import type { Prisma } from '@prisma/client';
 
 export async function POST(request: Request) {
 	try {
@@ -58,29 +59,31 @@ export async function POST(request: Request) {
 		}
 
 		// Thực hiện chuyển khoản trong transaction
-		const transfer = await prisma.$transaction(async (tx) => {
-			// Trừ tiền ví nguồn
-			await tx.wallet.update({
-				where: { id: fromWalletId },
-				data: { currentBalance: { decrement: Number(amount) } },
-			});
-			// Cộng tiền ví đích
-			await tx.wallet.update({
-				where: { id: toWalletId },
-				data: { currentBalance: { increment: Number(amount) } },
-			});
-			// Lưu lịch sử chuyển khoản
-			const newTransfer = await tx.transfer.create({
-				data: {
-					userId,
-					fromWalletId,
-					toWalletId,
-					amount: Number(amount),
-					note: note || '',
-				},
-			});
-			return newTransfer;
-		});
+		const transfer = await prisma.$transaction(
+			async (tx: Prisma.TransactionClient) => {
+				// Trừ tiền ví nguồn
+				await tx.wallet.update({
+					where: { id: fromWalletId },
+					data: { currentBalance: { decrement: Number(amount) } },
+				});
+				// Cộng tiền ví đích
+				await tx.wallet.update({
+					where: { id: toWalletId },
+					data: { currentBalance: { increment: Number(amount) } },
+				});
+				// Lưu lịch sử chuyển khoản
+				const newTransfer = await tx.transfer.create({
+					data: {
+						userId,
+						fromWalletId,
+						toWalletId,
+						amount: Number(amount),
+						note: note || '',
+					},
+				});
+				return newTransfer;
+			},
+		);
 
 		return NextResponse.json({ success: true, data: transfer });
 	} catch (error) {

@@ -41,3 +41,7 @@ yarn-error.log*
 next-env.d.ts
 
 .history
+
+# large files
+tracking-money-030725.tar
+*.tar

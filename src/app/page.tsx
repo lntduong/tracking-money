@@ -8,12 +8,20 @@ import {
 	Wallet,
 	Tag,
 	BarChart3,
+	EyeOff,
 } from 'lucide-react';
 import { Card, CardContent } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import Link from 'next/link';
 import { useEffect, useState } from 'react';
+import { Dialog } from '@/components/ui/dialog';
+import {
+	DialogContent,
+	DialogHeader,
+	DialogTitle,
+	DialogClose,
+} from '@/components/ui/dialog';
 
 interface DashboardData {
 	totalBalance: number;
@@ -57,8 +65,24 @@ export default function HomePage() {
 		null,
 	);
 	const [loading, setLoading] = useState(true);
+	const [greeting, setGreeting] = useState('');
+	const [isMasked, setIsMasked] = useState(true);
+	const [showAllTransactions, setShowAllTransactions] = useState(false);
 
 	useEffect(() => {
+		// Xác định lời chào dựa vào thời gian hệ thống
+		const now = new Date();
+		const hour = now.getHours();
+		let greet = 'Chào';
+		if (hour >= 5 && hour < 12) {
+			greet = 'Chào buổi sáng';
+		} else if (hour >= 12 && hour < 18) {
+			greet = 'Chào buổi chiều';
+		} else {
+			greet = 'Chào buổi tối';
+		}
+		setGreeting(greet);
+
 		async function fetchDashboardData() {
 			try {
 				const response = await fetch('/api/dashboard');
@@ -87,21 +111,21 @@ export default function HomePage() {
 				<div className='relative z-10'>
 					<div className='flex justify-between items-center mb-2'>
 						<div>
-							<p className='text-white/70 text-sm font-medium'>
-								Chào buổi sáng 👋
-							</p>
+							<p className='text-white/70 text-sm font-medium'>{greeting} 👋</p>
 						</div>
 						<div className='flex items-center gap-3'>
 							<Button
 								variant='ghost'
 								size='icon'
 								className='text-white hover:bg-white/20 h-10 w-10'
+								onClick={() => setIsMasked((prev) => !prev)}
 							>
-								<Eye className='w-5 h-5' />
+								{isMasked ? (
+									<EyeOff className='w-5 h-5' />
+								) : (
+									<Eye className='w-5 h-5' />
+								)}
 							</Button>
-							<div className='w-10 h-10 bg-white/20 rounded-full flex items-center justify-center'>
-								<span className='text-lg'>🔔</span>
-							</div>
 						</div>
 					</div>
 				</div>
@@ -147,6 +171,8 @@ export default function HomePage() {
 							<p className='text-white text-3xl font-bold mt-1'>
 								{loading ? (
 									<span className='animate-pulse'>...</span>
+								) : isMasked ? (
+									<span className='tracking-widest'>*** VNĐ</span>
 								) : (
 									`${
 										dashboardData?.totalBalance?.toLocaleString('vi-VN') || '0'
@@ -188,22 +214,30 @@ export default function HomePage() {
 							<div className='flex-1 text-center'>
 								<TrendingUp className='w-5 h-5 text-emerald-400 mx-auto mb-1' />
 								<p className='text-emerald-400 text-sm font-bold'>
-									+
-									{dashboardData?.summary?.totalIncome?.toLocaleString(
-										'vi-VN',
-									) || '0'}{' '}
-									VNĐ
+									{isMasked ? (
+										<span className='tracking-widest'>*** VNĐ</span>
+									) : (
+										`+${
+											dashboardData?.summary?.totalIncome?.toLocaleString(
+												'vi-VN',
+											) || '0'
+										} VNĐ`
+									)}
 								</p>
 								<p className='text-slate-400 text-xs'>Thu nhập</p>
 							</div>
 							<div className='flex-1 text-center'>
 								<TrendingDown className='w-5 h-5 text-rose-400 mx-auto mb-1' />
 								<p className='text-rose-400 text-sm font-bold'>
-									-
-									{dashboardData?.summary?.totalExpense?.toLocaleString(
-										'vi-VN',
-									) || '0'}{' '}
-									VNĐ
+									{isMasked ? (
+										<span className='tracking-widest'>*** VNĐ</span>
+									) : (
+										`-${
+											dashboardData?.summary?.totalExpense?.toLocaleString(
+												'vi-VN',
+											) || '0'
+										} VNĐ`
+									)}
 								</p>
 								<p className='text-slate-400 text-xs'>Chi tiêu</p>
 							</div>
@@ -315,7 +349,11 @@ export default function HomePage() {
 			<div className='p-4'>
 				<div className='flex justify-between items-center mb-4'>
 					<h2 className='text-lg font-semibold'>Giao dịch gần đây</h2>
-					<Button variant='link' className='text-primary p-0 h-auto'>
+					<Button
+						variant='link'
+						className='text-primary p-0 h-auto'
+						onClick={() => setShowAllTransactions(true)}
+					>
 						Xem tất cả
 					</Button>
 				</div>
@@ -431,6 +469,107 @@ export default function HomePage() {
 					</CardContent>
 				</Card>
 			</div>
+			{/* Modal hiển thị tất cả giao dịch */}
+			<Dialog open={showAllTransactions} onOpenChange={setShowAllTransactions}>
+				<DialogContent className='max-w-lg w-90 rounded-xl'>
+					<DialogHeader>
+						<DialogTitle>Tất cả giao dịch</DialogTitle>
+					</DialogHeader>
+					<div className='max-h-[60vh] overflow-y-auto divide-y divide-border'>
+						{dashboardData?.recentTransactions?.length ? (
+							dashboardData.recentTransactions.map((transaction) => (
+								<div
+									key={transaction.id}
+									className='p-4 flex justify-between items-center'
+								>
+									<div className='flex items-center space-x-3'>
+										<div
+											className={`w-10 h-10 rounded-full flex items-center justify-center ${
+												transaction.category.color === 'orange'
+													? 'bg-orange-100'
+													: transaction.category.color === 'blue'
+													? 'bg-blue-100'
+													: transaction.category.color === 'green'
+													? 'bg-green-100'
+													: transaction.category.color === 'red'
+													? 'bg-red-100'
+													: transaction.category.color === 'purple'
+													? 'bg-purple-100'
+													: transaction.category.color === 'yellow'
+													? 'bg-yellow-100'
+													: transaction.category.color === 'indigo'
+													? 'bg-indigo-100'
+													: transaction.category.color === 'teal'
+													? 'bg-teal-100'
+													: transaction.category.color === 'emerald'
+													? 'bg-emerald-100'
+													: 'bg-gray-100'
+											}`}
+										>
+											<span
+												className={`text-sm ${
+													transaction.category.color === 'orange'
+														? 'text-orange-600'
+														: transaction.category.color === 'blue'
+														? 'text-blue-600'
+														: transaction.category.color === 'green'
+														? 'text-green-600'
+														: transaction.category.color === 'red'
+														? 'text-red-600'
+														: transaction.category.color === 'purple'
+														? 'text-purple-600'
+														: transaction.category.color === 'yellow'
+														? 'text-yellow-600'
+														: transaction.category.color === 'indigo'
+														? 'text-indigo-600'
+														: transaction.category.color === 'teal'
+														? 'text-teal-600'
+														: transaction.category.color === 'emerald'
+														? 'text-emerald-600'
+														: 'text-gray-600'
+												}`}
+											>
+												{transaction.category.icon}
+											</span>
+										</div>
+										<div>
+											<p className='font-medium'>
+												{transaction.description || transaction.category.name}
+											</p>
+											<p className='text-sm text-muted-foreground'>
+												{new Date(transaction.date).toLocaleDateString('vi-VN')}
+												, {transaction.time}
+											</p>
+										</div>
+									</div>
+									<Badge
+										variant={
+											transaction.type === 'income' ? 'default' : 'destructive'
+										}
+										className={`font-semibold ${
+											transaction.type === 'income'
+												? 'bg-green-600 hover:bg-green-700'
+												: ''
+										}`}
+									>
+										{transaction.type === 'income' ? '+' : '-'}
+										{transaction.amount.toLocaleString('vi-VN')} VNĐ
+									</Badge>
+								</div>
+							))
+						) : (
+							<div className='p-8 text-center'>
+								<p className='text-muted-foreground'>Chưa có giao dịch nào</p>
+							</div>
+						)}
+					</div>
+					<DialogClose asChild>
+						<Button variant='outline' className='mt-4 w-full'>
+							Đóng
+						</Button>
+					</DialogClose>
+				</DialogContent>
+			</Dialog>
 		</div>
 	);
 }

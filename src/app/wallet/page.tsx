@@ -3,7 +3,14 @@
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
-import { Plus, ArrowLeftRight, Eye, Wallet, Loader2 } from 'lucide-react';
+import {
+	Plus,
+	ArrowLeftRight,
+	Eye,
+	Wallet,
+	Loader2,
+	EyeOff,
+} from 'lucide-react';
 import Link from 'next/link';
 import { useEffect, useState } from 'react';
 
@@ -42,6 +49,7 @@ export default function WalletPage() {
 	const [totalBalance, setTotalBalance] = useState(0);
 	const [loading, setLoading] = useState(true);
 	const [error, setError] = useState<string | null>(null);
+	const [isMasked, setIsMasked] = useState(true);
 
 	useEffect(() => {
 		fetchWallets();
@@ -166,8 +174,13 @@ export default function WalletPage() {
 								variant='ghost'
 								size='icon'
 								className='text-white hover:bg-white/20 h-10 w-10'
+								onClick={() => setIsMasked((prev) => !prev)}
 							>
-								<Eye className='w-5 h-5' />
+								{isMasked ? (
+									<EyeOff className='w-5 h-5' />
+								) : (
+									<Eye className='w-5 h-5' />
+								)}
 							</Button>
 							<div className='w-10 h-10 bg-white/20 rounded-full flex items-center justify-center'>
 								<Wallet className='w-5 h-5' />
@@ -179,7 +192,7 @@ export default function WalletPage() {
 					<div className='mb-4'>
 						<p className='text-white/70 text-sm font-medium'>Tổng số dư</p>
 						<p className='text-3xl font-bold mt-1'>
-							{formatCurrency(totalBalance)}
+							{isMasked ? '***' : formatCurrency(totalBalance)}
 						</p>
 					</div>
 				</div>
@@ -314,7 +327,7 @@ export default function WalletPage() {
 										wallet.type.name,
 									)}`}
 								>
-									{formatCurrency(wallet.balance)}
+									{isMasked ? '***' : formatCurrency(wallet.balance)}
 								</p>
 								<div className='flex justify-between items-center mt-2'>
 									<p
